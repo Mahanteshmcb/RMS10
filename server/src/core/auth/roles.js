@@ -14,8 +14,8 @@ function canPerform(role, action) {
     owner: ['*'],
     manager: ['*'],
     chef: ['view_orders', 'update_status'],
-    waiter: ['create_orders', 'view_menu'],
-    cashier: ['create_bills'],
+    waiter: ['create_orders', 'view_menu', 'view_reports'],
+    cashier: ['create_bills', 'view_reports'],
   };
   const allowed = permissions[role];
   if (!allowed) return false;
