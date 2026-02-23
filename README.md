@@ -166,7 +166,9 @@ and `checkModule('pos')` feature flag):
 3. `ORDER_COMPLETED` events trigger stock deductions based on recipes.  A
    `LOW_STOCK` event is emitted when quantity < threshold.
 4. Future work:
-   - Build UI for linking recipes and updating inventory
+   - Build UI for linking recipes and updating inventory ✅
+   - Frontend pages now support create/read/update/delete for units, materials, vendors, recipes, stock, purchase orders
+   - Low-stock page and real-time alerts via socket.io
    - Vendor purchase order workflows
    - Low‑stock alert endpoint or email notifications
 
