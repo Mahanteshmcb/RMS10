@@ -31,6 +31,37 @@ const Report = {
         [restaurantId, limit]
       )
     );
+  },
+
+  revenueByCategory: (restaurantId, startDate, endDate) => {
+    return db.withTenant(restaurantId, client =>
+      client.query(
+        `SELECT c.name, SUM(oi.quantity * oi.price) AS total
+           FROM order_items oi
+           JOIN menu_items mi ON oi.menu_item_id = mi.id
+           JOIN categories c ON mi.category_id = c.id
+          WHERE oi.restaurant_id = $1
+            AND oi.created_at BETWEEN $2 AND $3
+          GROUP BY c.name
+          ORDER BY total DESC`,
+        [restaurantId, startDate, endDate]
+      )
+    );
+  },
+
+  paymentMethods: (restaurantId, startDate, endDate) => {
+    return db.withTenant(restaurantId, client =>
+      client.query(
+        `SELECT payment_method, COUNT(*) as transactions, SUM(total) as amount
+           FROM orders o
+          WHERE o.restaurant_id = $1
+            AND o.created_at BETWEEN $2 AND $3
+            AND o.status = 'completed'
+          GROUP BY payment_method
+          ORDER BY amount DESC`,
+        [restaurantId, startDate, endDate]
+      )
+    );
   }
 };
 

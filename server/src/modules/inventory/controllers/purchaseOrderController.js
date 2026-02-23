@@ -1,5 +1,6 @@
 const PO = require('../models/purchaseOrder');
 const POI = require('../models/purchaseOrderItem');
+const db = require('../../../config/db');
 
 // purchase order CRUD
 exports.list = async (req, res) => {
@@ -35,9 +36,34 @@ exports.get = async (req, res) => {
 
 exports.update = async (req, res) => {
   try {
+    // check for status transition to received
+    const prev = await PO.getById(req.tenant.id, req.params.id);
     const result = await PO.update(req.tenant.id, req.params.id, req.body);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
-    res.json(result.rows[0]);
+
+    const updated = result.rows[0];
+    const previous = prev.rows[0];
+
+    if (updated.status === 'received' && previous && previous.status !== 'received') {
+      // add quantities to inventory stock
+      await db.withTenant(req.tenant.id, async client => {
+        const itemsRes = await client.query(
+          'SELECT raw_material_id, quantity FROM purchase_order_items WHERE purchase_order_id=$1',
+          [req.params.id]
+        );
+        for (const row of itemsRes.rows) {
+          await client.query(
+            `INSERT INTO inventory_stock (restaurant_id, raw_material_id, quantity)
+             VALUES ($1,$2,$3)
+             ON CONFLICT (restaurant_id, raw_material_id) DO UPDATE
+             SET quantity = inventory_stock.quantity + EXCLUDED.quantity, updated_at = NOW()`,
+            [req.tenant.id, row.raw_material_id, row.quantity]
+          );
+        }
+      });
+    }
+
+    res.json(updated);
   } catch (err) {
     console.error('Error updating purchase order', err);
     res.status(500).json({ error: 'Internal server error' });

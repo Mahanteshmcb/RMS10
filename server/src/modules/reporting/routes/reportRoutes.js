@@ -12,5 +12,9 @@ router.get('/top-items', authorize('view_reports'), c.topItems);
 router.get('/dashboard/summary', authorize('view_reports'), c.summary);
 // active orders
 router.get('/dashboard/active-orders', authorize('view_reports'), c.activeOrders);
+// revenue by category
+router.get('/dashboard/revenue-by-category', authorize('view_reports'), c.revenueByCategory);
+// revenue by payment method
+router.get('/dashboard/revenue-by-payment', authorize('view_reports'), c.paymentMethods);
 
 module.exports = router;

@@ -44,3 +44,29 @@ exports.activeOrders = async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+exports.revenueByCategory = async (req, res) => {
+  try {
+    const { start, end } = req.query;
+    const startDate = start || '1970-01-01';
+    const endDate = end || new Date().toISOString();
+    const result = await Report.revenueByCategory(req.tenant.id, startDate, endDate);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching revenue by category', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+exports.paymentMethods = async (req, res) => {
+  try {
+    const { start, end } = req.query;
+    const startDate = start || '1970-01-01';
+    const endDate = end || new Date().toISOString();
+    const result = await Report.paymentMethods(req.tenant.id, startDate, endDate);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching payment methods', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};

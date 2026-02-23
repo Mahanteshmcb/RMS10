@@ -2,6 +2,9 @@ const eventBus = require('../../core/events/eventBus');
 const db = require('../../config/db');
 
 // when an order is created, mark the table occupied
+// also notify kitchen via websocket
+const kds = require('../../app').kds; // will export later
+
 eventBus.on('ORDER_CREATED', async ({ restaurantId, orderId, items }) => {
   try {
     await db.withTenant(restaurantId, client =>
@@ -13,6 +16,8 @@ eventBus.on('ORDER_CREATED', async ({ restaurantId, orderId, items }) => {
       )
     );
     console.log(`Table marked occupied for order ${orderId}`);
+    // emit to kitchen namespace
+    kds.emit('new_order', { restaurantId, orderId, items });
   } catch (err) {
     console.error('Error in ORDER_CREATED listener:', err);
   }

@@ -8,6 +8,8 @@ export default function Reports() {
   const [limit, setLimit] = useState(10);
   const [summary, setSummary] = useState({});
   const [active, setActive] = useState([]);
+  const [revenueByCategory, setRevenueByCategory] = useState([]);
+  const [revenueByPayment, setRevenueByPayment] = useState([]);
 
   const fetchSales = () => {
     const params = new URLSearchParams();
@@ -33,6 +35,14 @@ export default function Reports() {
     fetch('/api/reporting/dashboard/active-orders')
       .then(r => r.json())
       .then(setActive);
+    fetch('/api/reporting/dashboard/revenue-by-category')
+      .then(r => r.json())
+      .then(setRevenueByCategory)
+      .catch(e => console.log('Category revenue fetch error:', e));
+    fetch('/api/reporting/dashboard/revenue-by-payment')
+      .then(r => r.json())
+      .then(setRevenueByPayment)
+      .catch(e => console.log('Payment revenue fetch error:', e));
   }, []);
 
   return (
@@ -76,6 +86,46 @@ export default function Reports() {
                 <td className="px-2 py-1">{a.status}</td>
                 <td className="px-2 py-1">{a.item_count}</td>
                 <td className="px-2 py-1">${a.total || 0}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
+
+      <section className="mb-6">
+        <h2>Revenue by Category</h2>
+        <table className="w-full border">
+          <thead>
+            <tr>
+              <th className="border px-2">Category</th>
+              <th className="border px-2">Revenue</th>
+            </tr>
+          </thead>
+          <tbody>
+            {revenueByCategory.map(r => (
+              <tr key={r.category_id} className="border-t">
+                <td className="px-2 py-1">{r.category_name}</td>
+                <td className="px-2 py-1">${r.total_revenue || 0}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
+
+      <section className="mb-6">
+        <h2>Revenue by Payment Method</h2>
+        <table className="w-full border">
+          <thead>
+            <tr>
+              <th className="border px-2">Payment Method</th>
+              <th className="border px-2">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {revenueByPayment.map(r => (
+              <tr key={r.payment_method} className="border-t">
+                <td className="px-2 py-1">{r.payment_method}</td>
+                <td className="px-2 py-1">${r.total || 0}</td>
               </tr>
             ))}
           </tbody>
