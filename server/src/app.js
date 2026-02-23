@@ -9,8 +9,8 @@ const { authMiddleware } = require('./core/auth/jwt');
 const { checkModule } = require('./core/middleware/featureFlagCheck');
 const tenantHandler = require('./core/middleware/tenantHandler');
 
-// load POS listeners (e.g. table status updates)
-require('./modules/pos/orderListeners');
+// NOTE: POS listeners are imported after socket namespaces are initialized (see below)
+// require('./modules/pos/orderListeners');
 
 // sample health check route
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
@@ -32,11 +32,34 @@ const io = new SocketIo(server, {
   cors: { origin: '*' }
 });
 
-// simple connection log
+// prepare placeholders for namespaces so they can be imported
+let kds, waiter;
+
+// simple connection log (global namespace)
 io.on('connection', socket => {
   console.log('client connected', socket.id);
   socket.on('disconnect', () => console.log('client disconnected', socket.id));
 });
+
+// kitchen namespace
+kds = io.of('/kds');
+kds.on('connection', socket => {
+  console.log('KDS client connected', socket.id);
+  socket.on('disconnect', () => console.log('KDS client disconnected', socket.id));
+});
+
+// waiter namespace
+waiter = io.of('/waiter');
+waiter.on('connection', socket => {
+  console.log('Waiter client connected', socket.id);
+  socket.on('disconnect', () => console.log('Waiter client disconnected', socket.id));
+});
+
+// export for use in other modules
+module.exports = { app, io, kds, waiter };
+
+// now that namespaces exist, load POS listeners (they may emit to kds)
+require('./modules/pos/orderListeners');
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
@@ -62,6 +85,10 @@ function defineRoutes() {
   // orders
   const orderRoutes = require('./modules/pos/routes/orderRoutes');
   posRouter.use('/orders', orderRoutes);
+
+  // kitchen actions
+  const kdsRoutes = require('./modules/pos/routes/kdsRoutes');
+  posRouter.use('/kds', kdsRoutes);
 
   // placeholder test route
   posRouter.get('/test', authorize('view_menu'), (req, res) =>

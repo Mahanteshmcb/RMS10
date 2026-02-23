@@ -55,8 +55,12 @@ CREATE TABLE order_items (
   variant_id INTEGER REFERENCES item_variants(id),
   quantity INTEGER NOT NULL DEFAULT 1,
   price NUMERIC(10,2) NOT NULL,
+  status TEXT DEFAULT 'pending', -- pending, ready, served
   created_at TIMESTAMP DEFAULT NOW()
 );
+
+-- if adding to existing DB, run:
+-- ALTER TABLE order_items ADD COLUMN status TEXT DEFAULT 'pending';
 
 -- RLS policies for new tables
 

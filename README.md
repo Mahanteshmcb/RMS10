@@ -144,6 +144,10 @@ and `checkModule('pos')` feature flag):
 - `PUT /orders/:id/status`  – change order status (open/completed/cancelled)
 - `POST /orders/:id/pay`     – mark order paid (completes order and frees table)
 
+### KDS Endpoints
+
+- `POST /kds/items/:itemId/ready` – mark a line item ready; emits `item_ready` to waiter namespace
+
 Status changes trigger events that update table occupancy/billing; paying
 an order also fires `ORDER_PAID` to return the table to `vacant`.
 
