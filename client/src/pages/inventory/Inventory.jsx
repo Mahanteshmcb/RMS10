@@ -5,6 +5,7 @@ import Vendors from './Vendors';
 import Stock from './Stock';
 import Recipes from './Recipes';
 import PurchaseOrders from './PurchaseOrders';
+import LowStock from './LowStock';
 
 export default function Inventory() {
   return (
@@ -17,6 +18,7 @@ export default function Inventory() {
         <NavLink to="stock">Stock</NavLink>
         <NavLink to="recipes">Recipes</NavLink>
         <NavLink to="purchase-orders">POs</NavLink>
+        <NavLink to="low">Low Stock</NavLink>
       </nav>
       <Routes>
         <Route path="units" element={<Units />} />
@@ -25,6 +27,7 @@ export default function Inventory() {
         <Route path="stock" element={<Stock />} />
         <Route path="recipes" element={<Recipes />} />
         <Route path="purchase-orders" element={<PurchaseOrders />} />
+        <Route path="low" element={<LowStock />} />
       </Routes>
     </div>
   );
