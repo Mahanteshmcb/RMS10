@@ -11,6 +11,8 @@ function AddItemForm({ orderId, refresh }) {
   }, []);
 
   const submit = () => {
+    if (!matId) return alert('select material');
+    if (qty <= 0) return alert('quantity must be positive');
     fetch(`/api/inventory/purchase-orders/${orderId}/items`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
