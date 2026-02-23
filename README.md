@@ -153,6 +153,18 @@ and `checkModule('pos')` feature flag):
 
 - `POST /orders/:id/items` – add a menu item to an open order (use role `modify_order`)
 
+## Phase 4: Inventory & Recipe Engine
+
+1. Apply the new schema in `server/db/inventory.sql` to your database.
+2. Inventory helpers under `/server/src/modules/inventory` manage:
+   - Units, raw materials, vendors, purchase orders, stock, recipes
+3. `ORDER_COMPLETED` events trigger stock deductions based on recipes.  A
+   `LOW_STOCK` event is emitted when quantity < threshold.
+4. Future work:
+   - Build UI for linking recipes and updating inventory
+   - Vendor purchase order workflows
+   - Low‑stock alert endpoint or email notifications
+
 Status changes trigger events that update table occupancy/billing; paying
 an order also fires `ORDER_PAID` to return the table to `vacant`.
 
@@ -168,7 +180,16 @@ Clients can connect with:
 
 ```js
 import { io } from 'socket.io-client';
+// general namespace
 const socket = io('http://localhost:3000');
 socket.on('connect', () => console.log('connected', socket.id));
+
+// kitchen namespace
+const kds = io('http://localhost:3000/kds');
+kds.on('new_order', data => console.log('new order', data));
+
+// waiter namespace
+const waiter = io('http://localhost:3000/waiter');
+waiter.on('item_ready', data => console.log('item ready', data));
 ```
 

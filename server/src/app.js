@@ -60,6 +60,8 @@ module.exports = { app, io, kds, waiter };
 
 // now that namespaces exist, load POS listeners (they may emit to kds)
 require('./modules/pos/orderListeners');
+// inventory module listens for order events
+require('./modules/inventory/inventoryListeners');
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
@@ -93,6 +95,10 @@ function defineRoutes() {
   // waiter actions
   const waiterRoutes = require('./modules/pos/routes/waiterRoutes');
   posRouter.use('/', waiterRoutes);
+
+  // inventory module (placeholder)
+  const inventoryRouter = require('./modules/inventory/routes/inventoryRoutes');
+  app.use('/api/inventory', authMiddleware, tenantHandler, checkModule('inventory'), inventoryRouter);
 
   // placeholder test route
   posRouter.get('/test', authorize('view_menu'), (req, res) =>
