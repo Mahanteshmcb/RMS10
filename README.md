@@ -157,7 +157,11 @@ and `checkModule('pos')` feature flag):
 
 1. Apply the new schema in `server/db/inventory.sql` to your database.
 2. Inventory helpers under `/server/src/modules/inventory` manage:
-   - Units, raw materials, vendors, purchase orders, stock, recipes
+   - Units, raw materials, **vendors**, **purchase orders** (with items), **recipes**, stock, 
+   - Stock endpoints for adjusting quantity/threshold (`/stock`)
+   - **Low-stock query** available at `/stock/low` and surfaced in the UI under "Low Stock"
+   - Purchase orders can be listed / created under `/purchase-orders` with nested `/items`
+   - Updating an order's `status` to `received` will automatically add its item quantities to inventory stock
 3. `ORDER_COMPLETED` events trigger stock deductions based on recipes.  A
    `LOW_STOCK` event is emitted when quantity < threshold.
 4. Future work:
