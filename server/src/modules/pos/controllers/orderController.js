@@ -38,7 +38,11 @@ async function updateStatus(req, res, next) {
     const { id } = req.params;
     const { status } = req.body;
     const result = await Order.updateStatus(req.restaurantId, id, status);
-    res.json(result.rows[0]);
+    const updated = result.rows[0];
+    if (status === 'completed') {
+      eventBus.emit('ORDER_COMPLETED', { restaurantId: req.restaurantId, orderId: id });
+    }
+    res.json(updated);
   } catch (err) {
     next(err);
   }

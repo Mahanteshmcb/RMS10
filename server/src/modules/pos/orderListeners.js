@@ -18,4 +18,22 @@ eventBus.on('ORDER_CREATED', async ({ restaurantId, orderId, items }) => {
   }
 });
 
+// when order is completed, mark table billed
+
+eventBus.on('ORDER_COMPLETED', async ({ restaurantId, orderId }) => {
+  try {
+    await db.withTenant(restaurantId, client =>
+      client.query(
+        `UPDATE tables SET status='billed'
+         WHERE id = (SELECT table_id FROM orders WHERE id=$1)
+         AND status = 'occupied'`,
+        [orderId]
+      )
+    );
+    console.log(`Table marked billed for order ${orderId}`);
+  } catch (err) {
+    console.error('Error in ORDER_COMPLETED listener:', err);
+  }
+});
+
 // other listeners (inventory, KDS) added in later phases
