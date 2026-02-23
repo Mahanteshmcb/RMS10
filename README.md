@@ -148,6 +148,10 @@ and `checkModule('pos')` feature flag):
 
 - `POST /kds/items/:itemId/ready` – mark a line item ready; emits `item_ready` to waiter namespace
 
+### Waiter Endpoints
+
+- `POST /orders/:id/items` – add a menu item to an open order (use role `modify_order`)
+
 Status changes trigger events that update table occupancy/billing; paying
 an order also fires `ORDER_PAID` to return the table to `vacant`.
 

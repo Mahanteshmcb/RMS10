@@ -90,6 +90,10 @@ function defineRoutes() {
   const kdsRoutes = require('./modules/pos/routes/kdsRoutes');
   posRouter.use('/kds', kdsRoutes);
 
+  // waiter actions
+  const waiterRoutes = require('./modules/pos/routes/waiterRoutes');
+  posRouter.use('/', waiterRoutes);
+
   // placeholder test route
   posRouter.get('/test', authorize('view_menu'), (req, res) =>
     res.json({ msg: 'POS works', restaurant: req.restaurantId })
