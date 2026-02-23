@@ -98,6 +98,20 @@ The server now includes a basic Socket.io setup (`io` instance in `app.js`) so
 real-time channels are available later.  During Phase 3 we'll add namespaces,
 event listeners, and emitters (e.g. `ORDER_CREATED`).
 
+### Event Bus
+
+An internal event bus (`src/core/events/eventBus.js`) is used to decouple
+modules.  The POS `orderController` emits `ORDER_CREATED` with payload
+`{ restaurantId, orderId, items }` whenever an order is placed.  Other
+modules (inventory, KDS) can subscribe:
+
+```js
+const bus = require('./core/events/eventBus');
+bus.on('ORDER_CREATED', ({ restaurantId, orderId, items }) => {
+  // react accordingly
+});
+```
+
 Clients can connect with:
 
 ```js

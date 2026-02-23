@@ -56,6 +56,10 @@ function defineRoutes() {
   const tableRoutes = require('./modules/pos/routes/tableRoutes');
   posRouter.use('/tables', tableRoutes);
 
+  // orders
+  const orderRoutes = require('./modules/pos/routes/orderRoutes');
+  posRouter.use('/orders', orderRoutes);
+
   // placeholder test route
   posRouter.get('/test', authorize('view_menu'), (req, res) =>
     res.json({ msg: 'POS works', restaurant: req.restaurantId })
