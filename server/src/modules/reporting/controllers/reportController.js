@@ -1,4 +1,5 @@
 const Report = require('../models/report');
+const Dashboard = require('../models/dashboard');
 
 exports.sales = async (req, res) => {
   try {
@@ -20,6 +21,26 @@ exports.topItems = async (req, res) => {
     res.json(result.rows);
   } catch (err) {
     console.error('Error fetching top items report', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+exports.summary = async (req, res) => {
+  try {
+    const data = await Dashboard.summary(req.tenant.id);
+    res.json(data);
+  } catch (err) {
+    console.error('Error fetching dashboard summary', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+exports.activeOrders = async (req, res) => {
+  try {
+    const result = await Dashboard.activeOrders(req.tenant.id);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching active orders', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 };

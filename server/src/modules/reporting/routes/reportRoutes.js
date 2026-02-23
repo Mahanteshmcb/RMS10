@@ -8,5 +8,9 @@ const router = express.Router();
 router.get('/sales', authorize('view_reports'), c.sales);
 // top selling menu items
 router.get('/top-items', authorize('view_reports'), c.topItems);
+// dashboard summary
+router.get('/dashboard/summary', authorize('view_reports'), c.summary);
+// active orders
+router.get('/dashboard/active-orders', authorize('view_reports'), c.activeOrders);
 
 module.exports = router;
