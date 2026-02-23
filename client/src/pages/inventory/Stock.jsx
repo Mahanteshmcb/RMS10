@@ -17,31 +17,50 @@ export default function Stock() {
     });
   };
 
+  const updateQuantity = (id, qty) => {
+    fetch('/api/inventory/stock', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, quantity: qty }),
+    }).then(() => {
+      setStock(prev => prev.map(s => (s.id === id ? { ...s, quantity: qty } : s)));
+    });
+  };
+
   return (
     <div>
       <h2>Inventory Stock</h2>
       <table className="w-full border">
         <thead>
           <tr>
-            <th>Material</th>
-            <th>Qty</th>
-            <th>Threshold</th>
-            <th>Action</th>
+            <th className="border px-2">Material</th>
+            <th className="border px-2">Qty</th>
+            <th className="border px-2">Threshold</th>
+            <th className="border px-2">Actions</th>
           </tr>
         </thead>
         <tbody>
           {stock.map(s => (
             <tr key={s.id} className="border-t">
-              <td>{s.raw_material_id}</td>
-              <td>{s.quantity}</td>
-              <td>{s.threshold}</td>
-              <td>
+              <td className="px-2 py-1">{s.raw_material_id}</td>
+              <td className="px-2 py-1">
+                <input
+                  type="number"
+                  value={s.quantity}
+                  onChange={e => updateQuantity(s.id, parseFloat(e.target.value))}
+                  className="border p-1 w-20"
+                />
+              </td>
+              <td className="px-2 py-1">
                 <input
                   type="number"
                   value={s.threshold}
                   onChange={e => updateThreshold(s.id, parseFloat(e.target.value))}
-                  className="border p-1 w-16"
+                  className="border p-1 w-20"
                 />
+              </td>
+              <td className="px-2 py-1">
+                {/* nothing for now */}
               </td>
             </tr>
           ))}
