@@ -19,4 +19,14 @@ async function upsert(req, res, next) {
   }
 }
 
+async function low(req, res, next) {
+  try {
+    const result = await Stock.getLow(req.restaurantId);
+    res.json(result.rows);
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { list, upsert, low };
 module.exports = { list, upsert };

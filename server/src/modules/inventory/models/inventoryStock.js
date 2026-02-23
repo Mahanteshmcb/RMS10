@@ -18,4 +18,12 @@ async function upsert(restaurantId, { raw_material_id, quantity, threshold }) {
   );
 }
 
+async function getLow(restaurantId) {
+  return db.withTenant(restaurantId, client =>
+    client.query(
+      'SELECT * FROM inventory_stock WHERE threshold > 0 AND quantity < threshold'
+    )
+  );
+}
+
 module.exports = { getAll, upsert };
