@@ -142,8 +142,10 @@ and `checkModule('pos')` feature flag):
 - `GET /orders/:id`         – view order with line items
 - `POST /orders`            – create order (tableId + items[])
 - `PUT /orders/:id/status`  – change order status (open/completed/cancelled)
+- `POST /orders/:id/pay`     – mark order paid (completes order and frees table)
 
-Status changes trigger events that update table occupancy/billing.
+Status changes trigger events that update table occupancy/billing; paying
+an order also fires `ORDER_PAID` to return the table to `vacant`.
 
 
 ```js

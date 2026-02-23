@@ -48,4 +48,16 @@ async function updateStatus(req, res, next) {
   }
 }
 
+async function pay(req, res, next) {
+  try {
+    const { id } = req.params;
+    // mark as paid and completed
+    const result = await Order.updateStatus(req.restaurantId, id, 'completed');
+    eventBus.emit('ORDER_PAID', { restaurantId: req.restaurantId, orderId: id });
+    res.json(result.rows[0]);
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = { list, get, create, updateStatus };

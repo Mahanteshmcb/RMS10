@@ -36,4 +36,21 @@ eventBus.on('ORDER_COMPLETED', async ({ restaurantId, orderId }) => {
   }
 });
 
+// when payment received free the table
+eventBus.on('ORDER_PAID', async ({ restaurantId, orderId }) => {
+  try {
+    await db.withTenant(restaurantId, client =>
+      client.query(
+        `UPDATE tables SET status='vacant'
+         WHERE id = (SELECT table_id FROM orders WHERE id=$1)
+         AND status = 'billed'`,
+        [orderId]
+      )
+    );
+    console.log(`Table freed after payment for order ${orderId}`);
+  } catch (err) {
+    console.error('Error in ORDER_PAID listener:', err);
+  }
+});
+
 // other listeners (inventory, KDS) added in later phases
