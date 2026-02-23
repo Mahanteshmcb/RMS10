@@ -11,7 +11,12 @@ export default function LowStock() {
 
     const socket = io('http://localhost:3000/inventory');
     socket.on('low_stock', data => {
-      setItems(prev => [...prev, data]);
+      setItems(prev => {
+        if (prev.find(i => i.raw_material_id === data.raw_material_id)) {
+          return prev;
+        }
+        return [...prev, data];
+      });
     });
     return () => socket.disconnect();
   }, []);
