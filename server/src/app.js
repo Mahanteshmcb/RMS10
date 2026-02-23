@@ -11,12 +11,28 @@ const tenantHandler = require('./core/middleware/tenantHandler');
 
 // sample health check route
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
-
+// SuperAdmin routes (no tenant or auth for now - should be secured separately)
+const superAdminRouter = require('./routes/superAdmin');
+app.use('/api/admin', superAdminRouter);
 // Example of protected module route
 defineRoutes();
 
+// socket.io setup (for later real-time features)
+const http = require('http');
+const { Server: SocketIo } = require('socket.io');
+const server = http.createServer(app);
+const io = new SocketIo(server, {
+  cors: { origin: '*' }
+});
+
+// simple connection log
+io.on('connection', socket => {
+  console.log('client connected', socket.id);
+  socket.on('disconnect', () => console.log('client disconnected', socket.id));
+});
+
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
