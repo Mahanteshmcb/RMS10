@@ -102,8 +102,49 @@ event listeners, and emitters (e.g. `ORDER_CREATED`).
 
 An internal event bus (`src/core/events/eventBus.js`) is used to decouple
 modules.  The POS `orderController` emits `ORDER_CREATED` with payload
-`{ restaurantId, orderId, items }` whenever an order is placed.  Other
+`{ restaurantId, orderId, items }` whenever an order is placed. It also emits
+`ORDER_COMPLETED` when an order status becomes `completed`.  Other
 modules (inventory, KDS) can subscribe:
+
+```js
+const bus = require('./core/events/eventBus');
+bus.on('ORDER_CREATED', ({ restaurantId, orderId, items }) => {
+  // react accordingly
+});
+```
+
+### POS API Endpoints
+
+Endpoints under `/api/pos` (all require authentication, tenant header/token,
+and `checkModule('pos')` feature flag):
+
+- `GET /categories`        – list categories
+- `POST /categories`       – create category
+- `PUT /categories/:id`     – update category
+- `DELETE /categories/:id`  – remove category
+
+- `GET /menu-items`         – list menu items with category
+- `POST /menu-items`        – create menu item
+- `GET /menu-items/:id`      – show menu item
+- `PUT /menu-items/:id`      – update menu item
+- `DELETE /menu-items/:id`   – delete menu item
+- `GET /menu-items/:menuItemId/variants` – list variants
+- `POST /menu-items/:menuItemId/variants` – add variant
+- `PUT /menu-items/variants/:variantId` – update variant
+- `DELETE /menu-items/variants/:variantId` – remove variant
+
+- `GET /tables`             – list dining tables
+- `POST /tables`            – create table
+- `PUT /tables/:id`         – update table (name/status)
+- `DELETE /tables/:id`      – delete table
+
+- `GET /orders`             – list orders
+- `GET /orders/:id`         – view order with line items
+- `POST /orders`            – create order (tableId + items[])
+- `PUT /orders/:id/status`  – change order status (open/completed/cancelled)
+
+Status changes trigger events that update table occupancy/billing.
+
 
 ```js
 const bus = require('./core/events/eventBus');
