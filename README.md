@@ -169,6 +169,7 @@ and `checkModule('pos')` feature flag):
    - Build UI for linking recipes and updating inventory ✅
    - Frontend pages now support create/read/update/delete for units, materials, vendors, recipes, stock, purchase orders
    - Low-stock page and real-time alerts via socket.io
+   - Inventory UI is fully functional with validation, inline editing, and real-time feedback
    - Vendor purchase order workflows
    - Low‑stock alert endpoint or email notifications
 
