@@ -48,6 +48,10 @@ function defineRoutes() {
   const categoryRoutes = require('./modules/pos/routes/categoryRoutes');
   posRouter.use('/categories', categoryRoutes);
 
+  // menu items & variants
+  const menuItemRoutes = require('./modules/pos/routes/menuItemRoutes');
+  posRouter.use('/menu-items', menuItemRoutes);
+
   // placeholder test route
   posRouter.get('/test', authorize('view_menu'), (req, res) =>
     res.json({ msg: 'POS works', restaurant: req.restaurantId })
