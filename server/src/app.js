@@ -108,6 +108,10 @@ function defineRoutes() {
   const inventoryRouter = require('./modules/inventory/routes/inventoryRoutes');
   app.use('/api/inventory', authMiddleware, tenantHandler, checkModule('inventory'), inventoryRouter);
 
+  // reporting module
+  const reportingRouter = require('./modules/reporting/routes/reportRoutes');
+  app.use('/api/reporting', authMiddleware, tenantHandler, checkModule('reporting'), reportingRouter);
+
   // placeholder test route
   posRouter.get('/test', authorize('view_menu'), (req, res) =>
     res.json({ msg: 'POS works', restaurant: req.restaurantId })
