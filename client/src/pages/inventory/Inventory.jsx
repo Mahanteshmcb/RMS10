@@ -12,15 +12,51 @@ export default function Inventory() {
     <div>
       <h1>Inventory Management</h1>
       <nav className="space-x-4 mb-4">
-        <NavLink to="units">Units</NavLink>
-        <NavLink to="materials">Materials</NavLink>
-        <NavLink to="vendors">Vendors</NavLink>
-        <NavLink to="stock">Stock</NavLink>
-        <NavLink to="recipes">Recipes</NavLink>
-        <NavLink to="purchase-orders">POs</NavLink>
-        <NavLink to="low">Low Stock</NavLink>
+        <NavLink
+          to="units"
+          className={({ isActive }) => (isActive ? 'font-bold underline' : '')}
+        >
+          Units
+        </NavLink>
+        <NavLink
+          to="materials"
+          className={({ isActive }) => (isActive ? 'font-bold underline' : '')}
+        >
+          Materials
+        </NavLink>
+        <NavLink
+          to="vendors"
+          className={({ isActive }) => (isActive ? 'font-bold underline' : '')}
+        >
+          Vendors
+        </NavLink>
+        <NavLink
+          to="stock"
+          className={({ isActive }) => (isActive ? 'font-bold underline' : '')}
+        >
+          Stock
+        </NavLink>
+        <NavLink
+          to="recipes"
+          className={({ isActive }) => (isActive ? 'font-bold underline' : '')}
+        >
+          Recipes
+        </NavLink>
+        <NavLink
+          to="purchase-orders"
+          className={({ isActive }) => (isActive ? 'font-bold underline' : '')}
+        >
+          POs
+        </NavLink>
+        <NavLink
+          to="low"
+          className={({ isActive }) => (isActive ? 'font-bold underline' : '')}
+        >
+          Low Stock
+        </NavLink>
       </nav>
       <Routes>
+        <Route index element={<Units />} />
         <Route path="units" element={<Units />} />
         <Route path="materials" element={<Materials />} />
         <Route path="vendors" element={<Vendors />} />
