@@ -43,8 +43,12 @@ server.listen(PORT, () => {
 function defineRoutes() {
   const express = require('express');
   const posRouter = express.Router();
-  // placeholder
   const { authorize } = require('./core/auth/authorize');
+  // wire up category routes
+  const categoryRoutes = require('./modules/pos/routes/categoryRoutes');
+  posRouter.use('/categories', authorize('view_menu'), categoryRoutes);
+
+  // placeholder test route
   posRouter.get('/test', authorize('view_menu'), (req, res) =>
     res.json({ msg: 'POS works', restaurant: req.restaurantId })
   );
