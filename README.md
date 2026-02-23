@@ -62,9 +62,24 @@ Both methods insert the restaurant and default module flags.
 
 ### Quick API Test
 
-1. Create a user manually in the `users` table (hash passwords with bcrypt or similar).
-2. Issue a JWT containing `{userId, restaurantId, role}` and attach it as `Bearer` token.
-3. Request `GET /api/pos/test` with header `x-restaurant-id` set or encoded in the token to verify middleware.
+1. Create a user via the new auth API or manually:
+   ```http
+   POST /api/auth/register
+   Content-Type: application/json
+
+   { "username": "alice", "password": "secret", "role": "owner", "restaurantId": 1 }
+   ```
+   (you can also use `src/scripts/createUser.js` later)
+2. Log in to receive a JWT:
+   ```http
+   POST /api/auth/login
+   Content-Type: application/json
+
+   { "username": "alice", "password": "secret" }
+   ```
+   Response: `{ "token": "<jwt>" }`.
+3. Send the token as `Authorization: Bearer <jwt>` and/or set `x-restaurant-id` header when calling protected APIs.
+4. Example: `GET /api/pos/test` should return enabled message if the token and headers are correct.
 
 ### WebSockets Support
 

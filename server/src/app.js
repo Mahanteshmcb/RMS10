@@ -14,6 +14,10 @@ app.get('/health', (req, res) => res.json({ status: 'ok' }));
 // SuperAdmin routes (no tenant or auth for now - should be secured separately)
 const superAdminRouter = require('./routes/superAdmin');
 app.use('/api/admin', superAdminRouter);
+
+// authentication routes
+const authRouter = require('./routes/auth');
+app.use('/api/auth', authRouter);
 // Example of protected module route
 defineRoutes();
 
