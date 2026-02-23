@@ -11,6 +11,17 @@ The architecture follows a domain-based structure with a Node.js/Express backend
 
 Refer to project planning documents for development phases and roadmap.
 
+## Setup Instructions
+
+1. Copy `.env.example` to `.env` and update values (database URL, JWT secret).
+2. Run `npm install` in both `/server` and `/client` directories.
+3. Initialize the PostgreSQL database and apply schema:
+   ```bash
+   psql -f server/db/init.sql
+   ```
+4. Start backend: `cd server && npm run dev` (requires nodemon).
+5. Start frontend: `cd client && npm run dev` (Vite server).
+
 ## Phase 1: Multi-tenant Foundation
 
 1. Run `psql -f server/db/init.sql` after creating your database to seed tables.
