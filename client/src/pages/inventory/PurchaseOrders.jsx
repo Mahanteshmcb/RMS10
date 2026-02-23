@@ -1,5 +1,46 @@
 import { useEffect, useState } from 'react';
 
+function AddItemForm({ orderId, refresh }) {
+  const [matId, setMatId] = useState('');
+  const [qty, setQty] = useState(1);
+  const [price, setPrice] = useState(0);
+  const [materials, setMaterials] = useState([]);
+
+  useEffect(() => {
+    fetch('/api/inventory/materials').then(r => r.json()).then(setMaterials);
+  }, []);
+
+  const submit = () => {
+    fetch(`/api/inventory/purchase-orders/${orderId}/items`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ raw_material_id: matId, quantity: qty, unit_price: price }),
+    })
+      .then(() => {
+        setMatId('');
+        setQty(1);
+        setPrice(0);
+        refresh();
+      });
+  };
+
+  return (
+    <div className="mt-2">
+      <h4 className="text-sm">Add Item</h4>
+      <select value={matId} onChange={e => setMatId(e.target.value)} className="border p-1">
+        <option value="">--material--</option>
+        {materials.map(m => (
+          <option key={m.id} value={m.id}>{m.name}</option>
+        ))}
+      </select>
+      <input type="number" value={qty} className="border p-1 w-16 mx-1" onChange={e => setQty(parseFloat(e.target.value))} />
+      <input type="number" value={price} className="border p-1 w-20 mx-1" onChange={e => setPrice(parseFloat(e.target.value))} />
+      <button onClick={submit} className="px-2 py-1 bg-blue-500 text-white">Add</button>
+    </div>
+  );
+}
+
+
 export default function PurchaseOrders() {
   const [orders, setOrders] = useState([]);
   const [vendorId, setVendorId] = useState('');
@@ -64,13 +105,16 @@ export default function PurchaseOrders() {
               items
             </button>
             {itemsMap[o.id] && (
-              <ul className="ml-4 mt-1">
-                {itemsMap[o.id].map(i => (
-                  <li key={i.id}>
-                    material {i.raw_material_id} x{i.quantity} @ {i.unit_price}
-                  </li>
-                ))}
-              </ul>
+              <div className="ml-4 mt-1">
+                <ul>
+                  {itemsMap[o.id].map(i => (
+                    <li key={i.id}>
+                      material {i.raw_material_id} x{i.quantity} @ {i.unit_price}
+                    </li>
+                  ))}
+                </ul>
+                <AddItemForm orderId={o.id} refresh={() => loadItems(o.id)} />
+              </div>
             )}
           </li>
         ))}
