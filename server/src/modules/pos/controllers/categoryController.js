@@ -20,4 +20,26 @@ async function create(req, res, next) {
   }
 }
 
-module.exports = { list, create };
+async function update(req, res, next) {
+  const { id } = req.params;
+  const { name } = req.body;
+  if (!name) return res.status(400).json({ error: 'name required' });
+  try {
+    const result = await Category.update(req.restaurantId, id, name);
+    res.json(result.rows[0]);
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function remove(req, res, next) {
+  const { id } = req.params;
+  try {
+    await Category.remove(req.restaurantId, id);
+    res.status(204).end();
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { list, create, update, remove };

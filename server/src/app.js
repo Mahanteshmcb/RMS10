@@ -46,7 +46,7 @@ function defineRoutes() {
   const { authorize } = require('./core/auth/authorize');
   // wire up category routes
   const categoryRoutes = require('./modules/pos/routes/categoryRoutes');
-  posRouter.use('/categories', authorize('view_menu'), categoryRoutes);
+  posRouter.use('/categories', categoryRoutes);
 
   // placeholder test route
   posRouter.get('/test', authorize('view_menu'), (req, res) =>
