@@ -48,12 +48,17 @@ export default function PurchaseOrders() {
   const [status, setStatus] = useState('pending');
   const [itemsMap, setItemsMap] = useState({});
 
+  const [editing, setEditing] = useState(null);
+  const [editVendor, setEditVendor] = useState('');
+  const [editStatus, setEditStatus] = useState('pending');
+
   useEffect(() => {
     fetch('/api/inventory/purchase-orders').then(r => r.json()).then(setOrders);
     fetch('/api/inventory/vendors').then(r => r.json()).then(setVendors);
   }, []);
 
   function create() {
+    if (!vendorId) return alert('select vendor');
     fetch('/api/inventory/purchase-orders', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -71,11 +76,11 @@ export default function PurchaseOrders() {
       .then(rows => setItemsMap(prev => ({ ...prev, [orderId]: rows })));
   };
 
-  const updateStatus = (id, newStatus) => {
+  const updateOrder = (id, vendor, stat) => {
     fetch(`/api/inventory/purchase-orders/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: newStatus }),
+      body: JSON.stringify({ vendor_id: vendor, status: stat }),
     })
       .then(r => r.json())
       .then(updated =>
@@ -86,59 +91,138 @@ export default function PurchaseOrders() {
   return (
     <div>
       <h2>Purchase Orders</h2>
-      <ul>
-        {orders.map(o => (
-          <li key={o.id} className="mb-2">
-            PO {o.id} from vendor {o.vendor_id} -
-            <select
-              value={o.status}
-              onChange={e => updateStatus(o.id, e.target.value)}
-              className="border ml-2 p-1"
-            >
-              <option value="pending">pending</option>
-              <option value="received">received</option>
-            </select>
-            <button
-              onClick={() => loadItems(o.id)}
-              className="ml-2 px-1 py-0.5 bg-blue-400 text-white"
-            >
-              items
-            </button>
-            <button
-              onClick={() => {
-                fetch(`/api/inventory/purchase-orders/${o.id}`, { method: 'DELETE' })
-                  .then(() => setOrders(prev => prev.filter(p => p.id !== o.id)));
-              }}
-              className="ml-2 text-red-500 text-sm"
-            >
-              delete order
-            </button>
-            {itemsMap[o.id] && (
-              <div className="ml-4 mt-1">
-                <ul>
-                  {itemsMap[o.id].map(i => (
-                    <li key={i.id} className="flex items-center space-x-2">
-                      <span>
-                        material {i.raw_material_id} x{i.quantity} @ {i.unit_price}
-                      </span>
-                      <button
-                        onClick={() => {
-                          fetch(`/api/inventory/purchase-orders/${o.id}/items/${i.id}`, { method: 'DELETE' })
-                            .then(() => loadItems(o.id));
-                        }}
-                        className="text-red-500 text-sm"
-                      >
-                        delete
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-                <AddItemForm orderId={o.id} refresh={() => loadItems(o.id)} />
-              </div>
-            )}
-          </li>
-        ))}
-      </ul>
+      <table className="w-full mb-4 border">
+        <thead>
+          <tr>
+            <th className="border px-2">ID</th>
+            <th className="border px-2">Vendor</th>
+            <th className="border px-2">Status</th>
+            <th className="border px-2">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {orders.map(o => (
+            <tr key={o.id} className="border-t">
+              <td className="px-2 py-1">{o.id}</td>
+              <td className="px-2 py-1">
+                {editing === o.id ? (
+                  <select
+                    value={editVendor}
+                    onChange={e => setEditVendor(e.target.value)}
+                    className="border p-1 w-full"
+                  >
+                    <option value="">--vendor--</option>
+                    {vendors.map(v => (
+                      <option key={v.id} value={v.id}>{v.name}</option>
+                    ))}
+                  </select>
+                ) : (
+                  vendors.find(v => v.id === o.vendor_id)?.name || ''
+                )}
+              </td>
+              <td className="px-2 py-1">
+                {editing === o.id ? (
+                  <select
+                    value={editStatus}
+                    onChange={e => setEditStatus(e.target.value)}
+                    className="border p-1"
+                  >
+                    <option value="pending">pending</option>
+                    <option value="received">received</option>
+                  </select>
+                ) : (
+                  o.status
+                )}
+              </td>
+              <td className="px-2 py-1 space-x-1">
+                {editing === o.id ? (
+                  <>
+                    <button
+                      onClick={() => {
+                        updateOrder(o.id, editVendor, editStatus);
+                        setEditing(null);
+                      }}
+                      className="text-green-600 text-sm"
+                    >
+                      save
+                    </button>
+                    <button
+                      onClick={() => setEditing(null)}
+                      className="text-gray-600 text-sm"
+                    >
+                      cancel
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => {
+                        setEditing(o.id);
+                        setEditVendor(o.vendor_id || '');
+                        setEditStatus(o.status);
+                      }}
+                      className="text-blue-500 text-sm"
+                    >
+                      edit
+                    </button>
+                    <button
+                      onClick={() => loadItems(o.id)}
+                      className="text-blue-500 text-sm"
+                    >
+                      items
+                    </button>
+                    <button
+                      onClick={() => {
+                        fetch(`/api/inventory/purchase-orders/${o.id}`, { method: 'DELETE' })
+                          .then(() => setOrders(prev => prev.filter(p => p.id !== o.id)));
+                      }}
+                      className="text-red-500 text-sm"
+                    >
+                      delete
+                    </button>
+                  </>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {Object.entries(itemsMap).map(([orderId, items]) => (
+        <div key={orderId} className="mb-4">
+          <h4>Items for PO {orderId}</h4>
+          <table className="w-full border">
+            <thead>
+              <tr>
+                <th className="border px-2">Material</th>
+                <th className="border px-2">Qty</th>
+                <th className="border px-2">Price</th>
+                <th className="border px-2">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map(i => (
+                <tr key={i.id} className="border-t">
+                  <td className="px-2 py-1">{i.raw_material_id}</td>
+                  <td className="px-2 py-1">{i.quantity}</td>
+                  <td className="px-2 py-1">{i.unit_price}</td>
+                  <td className="px-2 py-1">
+                    <button
+                      onClick={() => {
+                        fetch(`/api/inventory/purchase-orders/${orderId}/items/${i.id}`, { method: 'DELETE' })
+                          .then(() => loadItems(orderId));
+                      }}
+                      className="text-red-500 text-sm"
+                    >
+                      delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <AddItemForm orderId={orderId} refresh={() => loadItems(orderId)} />
+        </div>
+      ))}
       <div className="space-x-2">
         <select
           value={vendorId}
