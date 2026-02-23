@@ -9,6 +9,9 @@ const { authMiddleware } = require('./core/auth/jwt');
 const { checkModule } = require('./core/middleware/featureFlagCheck');
 const tenantHandler = require('./core/middleware/tenantHandler');
 
+// load POS listeners (e.g. table status updates)
+require('./modules/pos/orderListeners');
+
 // sample health check route
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 // SuperAdmin routes (no tenant or auth for now - should be secured separately)
