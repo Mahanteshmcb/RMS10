@@ -29,13 +29,51 @@ export default function Recipes() {
     setUnitId('');
   }
 
+  function remove(id) {
+    fetch(`/api/inventory/recipes/${id}`, { method: 'DELETE' }).then(() =>
+      setRecipes(prev => prev.filter(rp => rp.id !== id))
+    );
+  }
+
+  function update(id) {
+    const n = prompt('menu item id');
+    const m = prompt('material id');
+    const a = prompt('amount');
+    const u = prompt('unit id');
+    if (n !== null && m !== null && a !== null) {
+      fetch(`/api/inventory/recipes/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ menu_item_id: n, raw_material_id: m, amount: a, unit_id: u }),
+      })
+        .then(r => r.json())
+        .then(updated =>
+          setRecipes(prev => prev.map(rp => (rp.id === id ? updated : rp)))
+        );
+    }
+  }
+
   return (
     <div>
       <h2>Recipes</h2>
       <ul>
         {recipes.map(rp => (
-          <li key={rp.id}>
-            menu {rp.menu_item_id} uses material {rp.raw_material_id} x{rp.amount}
+          <li key={rp.id} className="flex items-center space-x-2">
+            <span>
+              menu {rp.menu_item_id} uses material {rp.raw_material_id} x{rp.amount}
+            </span>
+            <button
+              onClick={() => remove(rp.id)}
+              className="text-red-500 text-sm"
+            >
+              delete
+            </button>
+            <button
+              onClick={() => update(rp.id)}
+              className="text-blue-500 text-sm"
+            >
+              edit
+            </button>
           </li>
         ))}
       </ul>

@@ -21,13 +21,49 @@ export default function Vendors() {
     setContact('');
   }
 
+  function remove(id) {
+    fetch(`/api/inventory/vendors/${id}`, { method: 'DELETE' }).then(() =>
+      setVendors(prev => prev.filter(v => v.id !== id))
+    );
+  }
+
+  function update(id, newName, newContact) {
+    fetch(`/api/inventory/vendors/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: newName, contact_info: newContact }),
+    })
+      .then(r => r.json())
+      .then(updated =>
+        setVendors(prev => prev.map(v => (v.id === id ? updated : v)))
+      );
+  }
+
   return (
     <div>
       <h2>Vendors</h2>
       <ul>
         {vendors.map(v => (
-          <li key={v.id}>
-            {v.name} ({v.contact_info})
+          <li key={v.id} className="flex items-center space-x-2">
+            <span>
+              {v.name} ({v.contact_info})
+            </span>
+            <button
+              onClick={() => remove(v.id)}
+              className="text-red-500 text-sm"
+            >
+              delete
+            </button>
+            <button
+              onClick={() => {
+                const n = prompt('name', v.name);
+                const c = prompt('contact', v.contact_info || '');
+                if (n !== null) update(v.id, n, c);
+              }}
+              className="text-blue-500 text-sm"
+            >
+              edit
+            </button>
           </li>
         ))}
       </ul>

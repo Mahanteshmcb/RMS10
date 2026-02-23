@@ -104,12 +104,32 @@ export default function PurchaseOrders() {
             >
               items
             </button>
+            <button
+              onClick={() => {
+                fetch(`/api/inventory/purchase-orders/${o.id}`, { method: 'DELETE' })
+                  .then(() => setOrders(prev => prev.filter(p => p.id !== o.id)));
+              }}
+              className="ml-2 text-red-500 text-sm"
+            >
+              delete order
+            </button>
             {itemsMap[o.id] && (
               <div className="ml-4 mt-1">
                 <ul>
                   {itemsMap[o.id].map(i => (
-                    <li key={i.id}>
-                      material {i.raw_material_id} x{i.quantity} @ {i.unit_price}
+                    <li key={i.id} className="flex items-center space-x-2">
+                      <span>
+                        material {i.raw_material_id} x{i.quantity} @ {i.unit_price}
+                      </span>
+                      <button
+                        onClick={() => {
+                          fetch(`/api/inventory/purchase-orders/${o.id}/items/${i.id}`, { method: 'DELETE' })
+                            .then(() => loadItems(o.id));
+                        }}
+                        className="text-red-500 text-sm"
+                      >
+                        delete
+                      </button>
                     </li>
                   ))}
                 </ul>
