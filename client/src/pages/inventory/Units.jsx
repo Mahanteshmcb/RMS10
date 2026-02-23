@@ -4,12 +4,16 @@ export default function Units() {
   const [units, setUnits] = useState([]);
   const [name, setName] = useState('');
   const [abbr, setAbbr] = useState('');
+  const [editing, setEditing] = useState(null);
+  const [editName, setEditName] = useState('');
+  const [editAbbr, setEditAbbr] = useState('');
 
   useEffect(() => {
     fetch('/api/inventory/units').then(r => r.json()).then(setUnits);
   }, []);
 
   function add() {
+    if (!name.trim()) return alert('Name required');
     fetch('/api/inventory/units', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -42,31 +46,83 @@ export default function Units() {
   return (
     <div>
       <h2>Units</h2>
-      <ul>
-        {units.map(u => (
-          <li key={u.id} className="flex items-center space-x-2">
-            <span>
-              {u.name} ({u.abbreviation})
-            </span>
-            <button
-              onClick={() => remove(u.id)}
-              className="text-red-500 text-sm"
-            >
-              delete
-            </button>
-            <button
-              onClick={() => {
-                const n = prompt('name', u.name);
-                const a = prompt('abbr', u.abbreviation || '');
-                if (n !== null) update(u.id, n, a);
-              }}
-              className="text-blue-500 text-sm"
-            >
-              edit
-            </button>
-          </li>
-        ))}
-      </ul>
+      <table className="w-full mb-4 border">
+        <thead>
+          <tr>
+            <th className="border px-2">Name</th>
+            <th className="border px-2">Abbrev</th>
+            <th className="border px-2">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {units.map(u => (
+            <tr key={u.id} className="border-t">
+              <td className="px-2 py-1">
+                {editing === u.id ? (
+                  <input
+                    value={editName}
+                    onChange={e => setEditName(e.target.value)}
+                    className="border p-1 w-full"
+                  />
+                ) : (
+                  u.name
+                )}
+              </td>
+              <td className="px-2 py-1">
+                {editing === u.id ? (
+                  <input
+                    value={editAbbr}
+                    onChange={e => setEditAbbr(e.target.value)}
+                    className="border p-1 w-full"
+                  />
+                ) : (
+                  u.abbreviation
+                )}
+              </td>
+              <td className="px-2 py-1 space-x-1">
+                {editing === u.id ? (
+                  <>
+                    <button
+                      onClick={() => {
+                        update(u.id, editName, editAbbr);
+                        setEditing(null);
+                      }}
+                      className="text-green-600 text-sm"
+                    >
+                      save
+                    </button>
+                    <button
+                      onClick={() => setEditing(null)}
+                      className="text-gray-600 text-sm"
+                    >
+                      cancel
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => {
+                        setEditing(u.id);
+                        setEditName(u.name);
+                        setEditAbbr(u.abbreviation || '');
+                      }}
+                      className="text-blue-500 text-sm"
+                    >
+                      edit
+                    </button>
+                    <button
+                      onClick={() => remove(u.id)}
+                      className="text-red-500 text-sm"
+                    >
+                      delete
+                    </button>
+                  </>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
       <div className="space-x-2">
         <input
           placeholder="Name"
