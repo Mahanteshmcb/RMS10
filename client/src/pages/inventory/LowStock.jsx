@@ -24,6 +24,12 @@ export default function LowStock() {
   return (
     <div>
       <h2>Low Stock Alerts</h2>
+      <button
+        onClick={() => setItems([])}
+        className="mb-2 px-2 py-1 bg-red-500 text-white text-sm"
+      >
+        Clear
+      </button>
       <ul>
         {items.map(i => (
           <li key={i.id}>
