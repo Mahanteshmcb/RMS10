@@ -6,7 +6,7 @@ async function listOrders(req, res, next) {
   try {
     const result = await db.withTenant(req.restaurantId, client =>
       client.query(
-        `SELECT o.id as order_id, o.table_id, oi.id as item_id, mi.name as item_name, oi.quantity
+        `SELECT o.id as order_id, o.table_id, oi.id as item_id, oi.created_at as item_created, mi.name as item_name, oi.quantity
          FROM orders o
          JOIN order_items oi ON oi.order_id = o.id
          JOIN menu_items mi ON mi.id = oi.menu_item_id
