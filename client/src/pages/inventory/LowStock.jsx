@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { io } from 'socket.io-client';
 
 export default function LowStock() {
   const [items, setItems] = useState([]);
@@ -7,6 +8,12 @@ export default function LowStock() {
     fetch('/api/inventory/stock/low')
       .then(r => r.json())
       .then(setItems);
+
+    const socket = io('http://localhost:3000/inventory');
+    socket.on('low_stock', data => {
+      setItems(prev => [...prev, data]);
+    });
+    return () => socket.disconnect();
   }, []);
 
   return (

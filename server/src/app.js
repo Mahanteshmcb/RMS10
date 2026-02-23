@@ -55,8 +55,16 @@ waiter.on('connection', socket => {
   socket.on('disconnect', () => console.log('Waiter client disconnected', socket.id));
 });
 
+// inventory namespace for stock alerts
+let inventory;
+inventory = io.of('/inventory');
+inventory.on('connection', socket => {
+  console.log('Inventory client connected', socket.id);
+  socket.on('disconnect', () => console.log('Inventory client disconnected', socket.id));
+});
+
 // export for use in other modules
-module.exports = { app, io, kds, waiter };
+module.exports = { app, io, kds, waiter, inventory };
 
 // now that namespaces exist, load POS listeners (they may emit to kds)
 require('./modules/pos/orderListeners');

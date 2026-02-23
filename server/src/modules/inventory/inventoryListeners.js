@@ -1,6 +1,7 @@
 const eventBus = require('../../core/events/eventBus');
 const db = require('../../config/db');
 const Recipe = require('./models/recipe');
+const { inventory } = require('../../app');
 
 // subtract inventory when order completed
 eventBus.on('ORDER_COMPLETED', async ({ restaurantId, orderId }) => {
@@ -26,7 +27,11 @@ eventBus.on('ORDER_COMPLETED', async ({ restaurantId, orderId }) => {
           if (stockRow.rows.length > 0) {
             const { quantity, threshold } = stockRow.rows[0];
             if (threshold && quantity < threshold) {
-              eventBus.emit('LOW_STOCK', { restaurantId, raw_material_id: rec.raw_material_id, quantity });
+              const payload = { restaurantId, raw_material_id: rec.raw_material_id, quantity };
+              eventBus.emit('LOW_STOCK', payload);
+              if (inventory) {
+                inventory.emit('low_stock', payload);
+              }
             }
           }
         }
