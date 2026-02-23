@@ -14,8 +14,20 @@ Refer to project planning documents for development phases and roadmap.
 ## Phase 1: Multi-tenant Foundation
 
 1. Run `psql -f server/db/init.sql` after creating your database to seed tables.
+
+   *init.sql* now enables row-level security (RLS) on tenant tables and defines
+   policies based on the `app.current_restaurant` configuration variable.
+
 2. Backend helpers in `src/config` and `src/core` include:
-   - `db.js` (PG pool)
+   - `db.js` (PG pool) now exports `query()` and `withTenant(restaurantId, cb)`.
+     Use `withTenant` when you want the database to enforce the restaurant
+     constraint automatically via RLS:
+     ```js
+     await db.withTenant(req.restaurantId, async client => {
+       const { rows } = await client.query('SELECT * FROM users');
+       // RLS will ensure only rows for this restaurant are visible
+     });
+     ```
    - `auth/jwt` for JWT sign/verify and middleware
    - `middleware/tenantHandler.js` and `featureFlagCheck.js`
 3. Create restaurants via Super Admin script (to be added) which will also insert default module flags.

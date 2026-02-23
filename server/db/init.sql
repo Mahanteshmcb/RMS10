@@ -24,4 +24,17 @@ CREATE TABLE module_config (
   UNIQUE(restaurant_id, module)
 );
 
--- row-level security will be added later via triggers or policies
+-- enable row level security on tables that store per-restaurant data
+
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+CREATE POLICY users_tenant_isolation ON users
+  USING (restaurant_id = current_setting('app.current_restaurant')::int);
+
+ALTER TABLE module_config ENABLE ROW LEVEL SECURITY;
+CREATE POLICY modules_tenant_isolation ON module_config
+  USING (restaurant_id = current_setting('app.current_restaurant')::int);
+
+-- Future tables (e.g. menu_items, orders) should also activate RLS
+
+-- helpers for setting tenant (optional):
+-- SELECT set_config('app.current_restaurant','<id>', false);
