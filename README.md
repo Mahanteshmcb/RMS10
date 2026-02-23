@@ -160,6 +160,7 @@ and `checkModule('pos')` feature flag):
    - Units, raw materials, **vendors**, **purchase orders** (with items), **recipes**, stock, 
    - Stock endpoints for adjusting quantity/threshold (`/stock`)
    - **Low-stock query** available at `/stock/low` and surfaced in the UI under "Low Stock"
+   - Real‑time low‑stock events are also broadcast over a `/inventory` socket.io namespace (event `low_stock`)
    - Purchase orders can be listed / created under `/purchase-orders` with nested `/items`
    - Updating an order's `status` to `received` will automatically add its item quantities to inventory stock
 3. `ORDER_COMPLETED` events trigger stock deductions based on recipes.  A
