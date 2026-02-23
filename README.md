@@ -146,6 +146,7 @@ and `checkModule('pos')` feature flag):
 
 ### KDS Endpoints
 
+- `GET /kds/orders` – list active orders with pending items (for KDS display)
 - `POST /kds/items/:itemId/ready` – mark a line item ready; emits `item_ready` to waiter namespace
 
 ### Waiter Endpoints
