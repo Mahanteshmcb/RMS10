@@ -6,8 +6,9 @@ export default function Tables() {
   return (
     <div>
       <h1 className="text-2xl font-bold mb-4">Tables</h1>
-      <p>Add or manage tables and chair counts; reservations and waiter
-      assignments will reflect occupancy.</p>
+      <p>Add or manage tables and chair counts. Guests can reserve tables via
+      the public menu or an in‑restaurant scanner will mark them occupied; waiters
+      can also toggle status manually.</p>
       {/* filters could go here */}
       <div className="mt-4">
         <button className="px-3 py-1 bg-blue-500 text-white rounded">
