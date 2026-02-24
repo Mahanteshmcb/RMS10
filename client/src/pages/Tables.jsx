@@ -45,11 +45,23 @@ export default function Tables() {
   };
 
   const toggleStatus = t => {
-    const next = t.status === 'vacant' ? 'occupied' : 'vacant';
+    let next;
+    if (t.status === 'vacant') next = 'occupied';
+    else if (t.status === 'occupied') next = 'vacant';
+    else next = 'vacant';
     fetch(`/api/pos/tables/${t.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: t.name, status: next }),
+      body: JSON.stringify({ name: t.name, status: next, seats: t.seats }),
+    }).then(() => fetchTables());
+  };
+
+  const toggleReserve = t => {
+    const next = t.status === 'reserved' ? 'vacant' : 'reserved';
+    fetch(`/api/pos/tables/${t.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: t.name, status: next, seats: t.seats }),
     }).then(() => fetchTables());
   };
 
@@ -127,7 +139,13 @@ export default function Tables() {
                   className="text-sm text-green-600"
                   onClick={() => toggleStatus(t)}
                 >
-                  Toggle
+                  {t.status === 'vacant' ? 'Occupy' : t.status === 'occupied' ? 'Vacate' : 'Clear'}
+                </button>
+                <button
+                  className="text-sm text-yellow-600"
+                  onClick={() => toggleReserve(t)}
+                >
+                  {t.status === 'reserved' ? 'Unreserve' : 'Reserve'}
                 </button>
               </td>
             </tr>

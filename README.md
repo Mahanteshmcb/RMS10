@@ -135,7 +135,7 @@ and `checkModule('pos')` feature flag):
 
 - `GET /tables`             – list dining tables
 - `POST /tables`            – create table
-- `PUT /tables/:id`         – update table (name/status)
+- `PUT /tables/:id`         – update table (name/status/seats). status can be `vacant`, `occupied`, `billed`, or `reserved`.
 - `DELETE /tables/:id`      – delete table
 
 - `GET /orders`             – list orders
