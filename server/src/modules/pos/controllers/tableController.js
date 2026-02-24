@@ -10,10 +10,10 @@ async function list(req, res, next) {
 }
 
 async function create(req, res, next) {
-  const { name } = req.body;
+  const { name, seats } = req.body;
   if (!name) return res.status(400).json({ error: 'name required' });
   try {
-    const result = await Table.create(req.restaurantId, name);
+    const result = await Table.create(req.restaurantId, name, seats);
     res.status(201).json(result.rows[0]);
   } catch (err) {
     next(err);
@@ -22,9 +22,9 @@ async function create(req, res, next) {
 
 async function update(req, res, next) {
   const { id } = req.params;
-  const { name, status } = req.body;
+  const { name, status, seats } = req.body;
   try {
-    const result = await Table.update(req.restaurantId, id, { name, status });
+    const result = await Table.update(req.restaurantId, id, { name, status, seats });
     res.json(result.rows[0]);
   } catch (err) {
     next(err);

@@ -33,6 +33,7 @@ CREATE TABLE tables (
   id SERIAL PRIMARY KEY,
   restaurant_id INTEGER NOT NULL REFERENCES restaurants(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
+  seats INTEGER DEFAULT 1,
   status TEXT DEFAULT 'vacant', -- vacant, occupied, billed
   created_at TIMESTAMP DEFAULT NOW()
 );

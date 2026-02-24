@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 export default function Tables() {
   const [tables, setTables] = useState([]);
   const [newName, setNewName] = useState('');
+  const [newSeats, setNewSeats] = useState(1);
   const [editing, setEditing] = useState(null);
   const [filter, setFilter] = useState('all');
 
@@ -18,7 +19,7 @@ export default function Tables() {
   }, []);
 
   const submit = () => {
-    const payload = { name: newName };
+    const payload = { name: newName, seats: newSeats };
     const method = editing ? 'PUT' : 'POST';
     const url = editing ? `/api/pos/tables/${editing.id}` : '/api/pos/tables';
     fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
@@ -33,6 +34,7 @@ export default function Tables() {
   const startEdit = t => {
     setEditing(t);
     setNewName(t.name);
+    setNewSeats(t.seats || 1);
   };
 
   const del = id => {
@@ -67,6 +69,14 @@ export default function Tables() {
           onChange={e => setNewName(e.target.value)}
           className="border p-1 mr-2"
         />
+        <input
+          type="number"
+          min="1"
+          placeholder="Seats"
+          value={newSeats}
+          onChange={e => setNewSeats(e.target.value)}
+          className="border p-1 mr-2 w-20"
+        />
         <button
           className="px-3 py-1 bg-blue-500 text-white rounded"
           onClick={submit}
@@ -88,6 +98,7 @@ export default function Tables() {
           <tr>
             <th className="border px-2">ID</th>
             <th className="border px-2">Name</th>
+            <th className="border px-2">Seats</th>
             <th className="border px-2">Status</th>
             <th className="border px-2">Actions</th>
           </tr>
@@ -97,6 +108,7 @@ export default function Tables() {
             <tr key={t.id} className="border-t">
               <td className="px-2 py-1">{t.id}</td>
               <td className="px-2 py-1">{t.name}</td>
+              <td className="px-2 py-1">{t.seats || 1}</td>
               <td className="px-2 py-1">{t.status}</td>
               <td className="px-2 py-1 space-x-1">
                 <button

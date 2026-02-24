@@ -6,18 +6,18 @@ async function getAll(restaurantId) {
   );
 }
 
-async function create(restaurantId, name) {
+async function create(restaurantId, name, seats = 1) {
   return db.withTenant(restaurantId, client =>
-    client.query('INSERT INTO tables(restaurant_id, name) VALUES($1,$2) RETURNING *',
-      [restaurantId, name])
+    client.query('INSERT INTO tables(restaurant_id, name, seats) VALUES($1,$2,$3) RETURNING *',
+      [restaurantId, name, seats])
   );
 }
 
 async function update(restaurantId, id, data) {
-  const { name, status } = data;
+  const { name, status, seats } = data;
   return db.withTenant(restaurantId, client =>
-    client.query('UPDATE tables SET name=$1, status=$2 WHERE id=$3 RETURNING *',
-      [name, status, id])
+    client.query('UPDATE tables SET name=$1, status=$2, seats=$3 WHERE id=$4 RETURNING *',
+      [name, status, seats, id])
   );
 }
 
