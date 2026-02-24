@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { io as socketIo } from 'socket.io-client';
 
 export default function Tables() {
   const [tables, setTables] = useState([]);
@@ -16,6 +17,13 @@ export default function Tables() {
 
   useEffect(() => {
     fetchTables();
+
+    const socket = socketIo();
+    socket.on('table_update', data => {
+      // optionally check restaurantId or tableId
+      fetchTables();
+    });
+    return () => socket.disconnect();
   }, []);
 
   const submit = () => {
