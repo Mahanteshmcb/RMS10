@@ -177,9 +177,38 @@ Status changes trigger events that update table occupancy/billing; paying
 an order also fires `ORDER_PAID` to return the table to `vacant`.
 
 
-```js
-const bus = require('./core/events/eventBus');
-bus.on('ORDER_CREATED', ({ restaurantId, orderId, items }) => {
+## Phase 5: Reporting & Analytics
+
+The reporting module aggregates sales and operational data and provides a
+front-end dashboard. Key features:
+
+- `GET /api/reporting/sales?start=&end=` – daily revenue totals.
+- `GET /api/reporting/top-items?limit=` – most-sold menu items.
+- Dashboard endpoints under `/api/reporting/dashboard` for:
+  - `summary` (today's orders/revenue/active tables)
+  - `active-orders` (open orders list)
+  - `revenue-by-category` and `revenue-by-payment`
+
+### Frontend Dashboards
+
+The `Reports` page (linked in navigation) shows:
+
+- Today’s summary cards
+- Active orders table with export buttons
+- Dynamic charts (using Chart.js) for:
+  - Sales by day (line chart)
+  - Revenue by category (pie chart)
+  - Revenue by payment method (pie chart)
+  - Top menu items (bar chart)
+
+Each table or dataset includes **Export** buttons that generate XLSX or CSV
+files using the `xlsx` library and `file-saver`.
+
+> 🚀 Full control over data: choose date ranges, refresh results, and download
+the raw datasets for offline analysis.
+
+Future enhancements might include filtering, upload/import endpoints, or
+custom dashboard widgets.
   // react accordingly
 });
 ```

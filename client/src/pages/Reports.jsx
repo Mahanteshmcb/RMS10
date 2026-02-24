@@ -1,4 +1,30 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  PointElement,
+  LineElement,
+  ArcElement,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+import { Bar, Line, Pie } from 'react-chartjs-2';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  PointElement,
+  LineElement,
+  ArcElement,
+  Tooltip,
+  Legend
+);
+
 
 export default function Reports() {
   const [sales, setSales] = useState([]);
@@ -10,6 +36,12 @@ export default function Reports() {
   const [active, setActive] = useState([]);
   const [revenueByCategory, setRevenueByCategory] = useState([]);
   const [revenueByPayment, setRevenueByPayment] = useState([]);
+
+  // refs for chart canvas if needed
+  const salesChartRef = useRef();
+  const categoryChartRef = useRef();
+  const paymentChartRef = useRef();
+  const topItemsChartRef = useRef();
 
   const fetchSales = () => {
     const params = new URLSearchParams();
@@ -45,6 +77,24 @@ export default function Reports() {
       .catch(e => console.log('Payment revenue fetch error:', e));
   }, []);
 
+  // export helpers
+  const exportData = (data, filename) => {
+    if (!data || data.length === 0) return;
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
+    const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    saveAs(new Blob([wbout], { type: 'application/octet-stream' }), filename);
+  };
+
+  const exportCsv = (data, filename) => {
+    if (!data || data.length === 0) return;
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const csv = XLSX.utils.sheet_to_csv(worksheet);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    saveAs(blob, filename);
+  };
+
   return (
     <div>
       <h1>Reports & Dashboard</h1>
@@ -68,6 +118,20 @@ export default function Reports() {
 
       <section className="mb-6">
         <h2>Active Orders</h2>
+        <div className="mb-2 space-x-2">
+          <button
+            className="px-2 py-1 bg-green-500 text-white"
+            onClick={() => exportData(active, 'active-orders.xlsx')}
+          >
+            Export XLSX
+          </button>
+          <button
+            className="px-2 py-1 bg-green-500 text-white"
+            onClick={() => exportCsv(active, 'active-orders.csv')}
+          >
+            Export CSV
+          </button>
+        </div>
         <table className="w-full border">
           <thead>
             <tr>
@@ -94,6 +158,40 @@ export default function Reports() {
 
       <section className="mb-6">
         <h2>Revenue by Category</h2>
+        <div className="mb-2 space-x-2">
+          <button
+            className="px-2 py-1 bg-green-500 text-white"
+            onClick={() => exportData(revenueByCategory, 'revenue-by-category.xlsx')}
+          >
+            Export XLSX
+          </button>
+          <button
+            className="px-2 py-1 bg-green-500 text-white"
+            onClick={() => exportCsv(revenueByCategory, 'revenue-by-category.csv')}
+          >
+            Export CSV
+          </button>
+        </div>
+        <div className="w-full max-w-md mb-4">
+          <Pie
+            data={{
+              labels: revenueByCategory.map(r => r.category_name),
+              datasets: [
+                {
+                  data: revenueByCategory.map(r => r.total_revenue),
+                  backgroundColor: [
+                    '#4ade80',
+                    '#60a5fa',
+                    '#facc15',
+                    '#f472b6',
+                    '#34d399',
+                    '#f87171',
+                  ],
+                },
+              ],
+            }}
+          />
+        </div>
         <table className="w-full border">
           <thead>
             <tr>
@@ -114,6 +212,33 @@ export default function Reports() {
 
       <section className="mb-6">
         <h2>Revenue by Payment Method</h2>
+        <div className="mb-2 space-x-2">
+          <button
+            className="px-2 py-1 bg-green-500 text-white"
+            onClick={() => exportData(revenueByPayment, 'revenue-by-payment.xlsx')}
+          >
+            Export XLSX
+          </button>
+          <button
+            className="px-2 py-1 bg-green-500 text-white"
+            onClick={() => exportCsv(revenueByPayment, 'revenue-by-payment.csv')}
+          >
+            Export CSV
+          </button>
+        </div>
+        <div className="w-full max-w-md mb-4">
+          <Pie
+            data={{
+              labels: revenueByPayment.map(r => r.payment_method),
+              datasets: [
+                {
+                  data: revenueByPayment.map(r => r.total),
+                  backgroundColor: ['#60a5fa', '#f87171', '#34d399', '#facc15'],
+                },
+              ],
+            }}
+          />
+        </div>
         <table className="w-full border">
           <thead>
             <tr>
@@ -140,6 +265,34 @@ export default function Reports() {
           <button onClick={fetchSales} className="px-2 py-1 bg-blue-500 text-white">
             Refresh
           </button>
+          <button
+            className="px-2 py-1 bg-green-500 text-white"
+            onClick={() => exportData(sales, 'sales-by-day.xlsx')}
+          >
+            Export XLSX
+          </button>
+          <button
+            className="px-2 py-1 bg-green-500 text-white"
+            onClick={() => exportCsv(sales, 'sales-by-day.csv')}
+          >
+            Export CSV
+          </button>
+        </div>
+        <div className="w-full max-w-xl mb-4">
+          <Line
+            ref={salesChartRef}
+            data={{
+              labels: sales.map(s => new Date(s.day).toLocaleDateString()),
+              datasets: [
+                {
+                  label: 'Revenue',
+                  data: sales.map(s => s.total),
+                  borderColor: '#3b82f6',
+                  backgroundColor: 'rgba(59,130,246,0.2)',
+                },
+              ],
+            }}
+          />
         </div>
         <table className="w-full border">
           <thead>
@@ -161,6 +314,44 @@ export default function Reports() {
 
       <section>
         <h2>Top Menu Items</h2>
+        <div className="space-x-2 mb-2">
+          <input
+            type="number"
+            value={limit}
+            onChange={e => setLimit(e.target.value)}
+            className="w-16 border p-1"
+          />
+          <button onClick={fetchTop} className="px-2 py-1 bg-blue-500 text-white">
+            Refresh
+          </button>
+          <button
+            className="px-2 py-1 bg-green-500 text-white"
+            onClick={() => exportData(topItems, 'top-menu-items.xlsx')}
+          >
+            Export XLSX
+          </button>
+          <button
+            className="px-2 py-1 bg-green-500 text-white"
+            onClick={() => exportCsv(topItems, 'top-menu-items.csv')}
+          >
+            Export CSV
+          </button>
+        </div>
+        <div className="w-full max-w-xl mb-4">
+          <Bar
+            ref={topItemsChartRef}
+            data={{
+              labels: topItems.map(i => i.name),
+              datasets: [
+                {
+                  label: 'Sold',
+                  data: topItems.map(i => i.sold),
+                  backgroundColor: '#f59e0b',
+                },
+              ],
+            }}
+          />
+        </div>
         <div className="space-x-2 mb-2">
           <input
             type="number"
