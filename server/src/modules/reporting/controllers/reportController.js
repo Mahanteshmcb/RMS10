@@ -70,3 +70,28 @@ exports.paymentMethods = async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+exports.upload = async (req, res) => {
+  try {
+    // expecting { name, payload } in body
+    const { name, payload } = req.body;
+    if (!name || !payload) {
+      return res.status(400).json({ error: 'name and payload required' });
+    }
+    const result = await Report.saveUpload(req.tenant.id, name, payload);
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Error saving upload', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+exports.getUploads = async (req, res) => {
+  try {
+    const result = await Report.getUploads(req.tenant.id);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching uploads', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};

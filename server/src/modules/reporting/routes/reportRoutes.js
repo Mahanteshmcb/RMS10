@@ -17,4 +17,9 @@ router.get('/dashboard/revenue-by-category', authorize('view_reports'), c.revenu
 // revenue by payment method
 router.get('/dashboard/revenue-by-payment', authorize('view_reports'), c.paymentMethods);
 
+// generic JSON upload (stored in data_uploads table)
+router.post('/upload', authorize('view_reports'), express.json(), c.upload);
+// list existing uploads
+router.get('/uploads', authorize('view_reports'), c.getUploads);
+
 module.exports = router;

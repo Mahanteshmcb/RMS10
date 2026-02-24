@@ -37,6 +37,11 @@ export default function Reports() {
   const [revenueByCategory, setRevenueByCategory] = useState([]);
   const [revenueByPayment, setRevenueByPayment] = useState([]);
 
+  // upload state
+  const [uploadName, setUploadName] = useState('');
+  const [uploadPreview, setUploadPreview] = useState([]);
+  const [uploads, setUploads] = useState([]);
+
   // refs for chart canvas if needed
   const salesChartRef = useRef();
   const categoryChartRef = useRef();
@@ -77,6 +82,13 @@ export default function Reports() {
       .catch(e => console.log('Payment revenue fetch error:', e));
   }, []);
 
+  useEffect(() => {
+    fetch('/api/reporting/uploads')
+      .then(r => r.json())
+      .then(setUploads)
+      .catch(e => console.log('uploads fetch err', e));
+  }, []);
+
   // export helpers
   const exportData = (data, filename) => {
     if (!data || data.length === 0) return;
@@ -95,9 +107,110 @@ export default function Reports() {
     saveAs(blob, filename);
   };
 
+  // upload helpers
+  const handleFileInput = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = evt => {
+      const wb = XLSX.read(evt.target.result, { type: 'binary' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const data = XLSX.utils.sheet_to_json(ws);
+      setUploadPreview(data);
+    };
+    reader.readAsBinaryString(file);
+  };
+
+  const submitUpload = () => {
+    if (!uploadName || uploadPreview.length === 0) {
+      alert('Please provide a name and select a file');
+      return;
+    }
+    fetch('/api/reporting/upload', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: uploadName, payload: uploadPreview }),
+    })
+      .then(r => r.json())
+      .then(res => {
+        alert('Upload saved (id ' + res.id + ')');
+        setUploadName('');
+        setUploadPreview([]);
+      })
+      .catch(err => console.error('upload error', err));
+  };
+
   return (
     <div>
       <h1>Reports & Dashboard</h1>
+      <section className="mb-6 border p-4 bg-gray-50">
+        <h2 className="text-lg font-semibold">Upload Data</h2>
+        <div className="space-x-2 my-2">
+          <input
+            type="text"
+            placeholder="Name for upload"
+            value={uploadName}
+            onChange={e => setUploadName(e.target.value)}
+            className="border p-1"
+          />
+          <input type="file" accept=".xlsx,.csv" onChange={handleFileInput} />
+          <button
+            onClick={submitUpload}
+            className="px-2 py-1 bg-blue-500 text-white"
+          >
+            Send
+          </button>
+        </div>
+        {uploadPreview.length > 0 && (
+          <div className="max-h-32 overflow-auto border">
+            <table className="w-full text-sm">
+              <thead>
+                <tr>
+                  {Object.keys(uploadPreview[0]).map(col => (
+                    <th key={col} className="border px-1">
+                      {col}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {uploadPreview.map((row, idx) => (
+                  <tr key={idx} className="border-t">
+                    {Object.values(row).map((val, j) => (
+                      <td key={j} className="px-1 py-0">
+                        {val}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+      {uploads.length > 0 && (
+        <section className="mb-6">
+          <h2>Previous Uploads</h2>
+          <table className="w-full border">
+            <thead>
+              <tr>
+                <th className="border px-2">ID</th>
+                <th className="border px-2">Name</th>
+                <th className="border px-2">Created</th>
+              </tr>
+            </thead>
+            <tbody>
+              {uploads.map(u => (
+                <tr key={u.id} className="border-t">
+                  <td className="px-2 py-1">{u.id}</td>
+                  <td className="px-2 py-1">{u.name}</td>
+                  <td className="px-2 py-1">{new Date(u.created_at).toLocaleString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      )}
       <section className="mb-6">
         <h2>Today's Summary</h2>
         <div className="grid grid-cols-3 gap-4">

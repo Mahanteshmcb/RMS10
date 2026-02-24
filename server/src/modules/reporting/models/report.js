@@ -62,6 +62,27 @@ const Report = {
         [restaurantId, startDate, endDate]
       )
     );
+  },
+
+  saveUpload: (restaurantId, name, payload) => {
+    return db.withTenant(restaurantId, client =>
+      client.query(
+        `INSERT INTO data_uploads (restaurant_id, name, payload) VALUES ($1, $2, $3) RETURNING *`,
+        [restaurantId, name, payload]
+      )
+    );
+  },
+
+  getUploads: restaurantId => {
+    return db.withTenant(restaurantId, client =>
+      client.query(
+        `SELECT id, name, payload, created_at
+           FROM data_uploads
+          WHERE restaurant_id = $1
+          ORDER BY created_at DESC`,
+        [restaurantId]
+      )
+    );
   }
 };
 
