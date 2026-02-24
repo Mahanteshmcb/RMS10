@@ -24,6 +24,7 @@ export default function App() {
           <Route path="reports" element={<Reports />} />
           <Route path="settings" element={<Settings />} />
           <Route path="addons" element={<Addons />} />
+          <Route path="login" element={<Login />} />
           {/* legacy routes left outside layout if needed */}
           <Route path="kds" element={<KDS />} />
           <Route path="waiter" element={<Waiter />} />
