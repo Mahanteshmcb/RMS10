@@ -1,24 +1,34 @@
-import { Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import MainLayout from './components/MainLayout';
+import Home from './pages/Home';
+import Tables from './pages/Tables';
+import Kitchen from './pages/Kitchen';
+import Inventory from './pages/inventory/Inventory';
+import Menu from './pages/Menu';
+import Reports from './pages/Reports';
+import Settings from './pages/Settings';
+import Addons from './pages/Addons';
 import KDS from './pages/KDS';
 import Waiter from './pages/Waiter';
-import Inventory from './pages/inventory/Inventory';
-import Reports from './pages/Reports';
 
 export default function App() {
   return (
-    <div className="p-4">
-      <nav className="space-x-4">
-        <Link to="/kds">KDS</Link>
-        <Link to="/waiter">Waiter</Link>
-        <Link to="/inventory">Inventory</Link>
-        <Link to="/reports">Reports</Link>
-      </nav>
+    <Router>
       <Routes>
-        <Route path="/kds" element={<KDS />} />
-        <Route path="/waiter" element={<Waiter />} />
-        <Route path="/inventory/*" element={<Inventory />} />
-        <Route path="/reports" element={<Reports />} />
+        <Route path="/" element={<MainLayout />}>
+          <Route index element={<Home />} />
+          <Route path="tables" element={<Tables />} />
+          <Route path="kitchen" element={<Kitchen />} />
+          <Route path="inventory/*" element={<Inventory />} />
+          <Route path="menu" element={<Menu />} />
+          <Route path="reports" element={<Reports />} />
+          <Route path="settings" element={<Settings />} />
+          <Route path="addons" element={<Addons />} />
+          {/* legacy routes left outside layout if needed */}
+          <Route path="kds" element={<KDS />} />
+          <Route path="waiter" element={<Waiter />} />
+        </Route>
       </Routes>
-    </div>
+    </Router>
   );
 }

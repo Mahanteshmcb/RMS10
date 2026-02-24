@@ -191,6 +191,17 @@ front-end dashboard. Key features:
 
 ### Frontend Dashboards
 
+The client now uses a **sidebar layout** with multiple pages:
+
+- **Home** – overview/public entry; restaurant signup and plan selection.
+- **Tables** – manage tables, chairs, occupancy and reservations.
+- **Kitchen** – kitchen display for cooks (pending/ready filters).
+- **Inventory** – full inventory module including low‑stock alerts.
+- **Menu** – public menu listing with simple search.
+- **Reports** – analytics dashboard described below.
+- **Settings** – restaurant/account configuration.
+- **Addons** – optional modules/plugins marketplace.
+
 The `Reports` page (linked in navigation) shows:
 
 - Today’s summary cards
@@ -203,6 +214,10 @@ The `Reports` page (linked in navigation) shows:
 
 Each table or dataset includes **Export** buttons that generate XLSX or CSV
 files using the `xlsx` library and `file-saver`.
+
+- A simple **Upload Data** section lets users select an Excel/CSV file, preview
+  its contents, and save it to the server (stored in a `data_uploads` table).
+  This provides a foundation for importing external datasets for later analysis.
 
 > 🚀 Full control over data: choose date ranges, refresh results, and download
 the raw datasets for offline analysis.
