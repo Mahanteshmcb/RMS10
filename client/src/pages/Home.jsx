@@ -5,7 +5,8 @@ export default function Home() {
       <p>
         Restaurant owners can request a plan, register their establishment, and
         manage their account from here. After signing up you'll receive a
-        restaurant ID and password which can be updated later in settings.
+        restaurant ID and initial password; both can be changed later in the
+        Settings page.
       </p>
       <div className="mt-6 space-y-4">
         <button className="px-4 py-2 bg-blue-500 text-white rounded">
