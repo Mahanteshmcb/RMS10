@@ -8,8 +8,15 @@ export default function Tables() {
   const [editing, setEditing] = useState(null);
   const [filter, setFilter] = useState('all');
 
+  const getHeaders = () => {
+    const headers = { 'Content-Type': 'application/json' };
+    const token = localStorage.getItem('token');
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+    return headers;
+  };
+
   const fetchTables = () => {
-    fetch('/api/pos/tables')
+    fetch('/api/pos/tables', { headers: getHeaders() })
       .then(r => r.json())
       .then(data => setTables(data))
       .catch(err => console.error('tables fetch', err));
@@ -30,7 +37,7 @@ export default function Tables() {
     const payload = { name: newName, seats: newSeats };
     const method = editing ? 'PUT' : 'POST';
     const url = editing ? `/api/pos/tables/${editing.id}` : '/api/pos/tables';
-    fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+    fetch(url, { method, headers: getHeaders(), body: JSON.stringify(payload) })
       .then(r => r.json())
       .then(() => {
         setNewName('');
@@ -47,7 +54,7 @@ export default function Tables() {
 
   const del = id => {
     if (window.confirm('Delete table?')) {
-      fetch(`/api/pos/tables/${id}`, { method: 'DELETE' })
+      fetch(`/api/pos/tables/${id}`, { method: 'DELETE', headers: getHeaders() })
         .then(() => fetchTables());
     }
   };
@@ -59,7 +66,7 @@ export default function Tables() {
     else next = 'vacant';
     fetch(`/api/pos/tables/${t.id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getHeaders(),
       body: JSON.stringify({ name: t.name, status: next, seats: t.seats }),
     }).then(() => fetchTables());
   };
@@ -68,7 +75,7 @@ export default function Tables() {
     const next = t.status === 'reserved' ? 'vacant' : 'reserved';
     fetch(`/api/pos/tables/${t.id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getHeaders(),
       body: JSON.stringify({ name: t.name, status: next, seats: t.seats }),
     }).then(() => fetchTables());
   };
