@@ -60,4 +60,4 @@ async function pay(req, res, next) {
   }
 }
 
-module.exports = { list, get, create, updateStatus };
+module.exports = { list, get, create, updateStatus, pay };
