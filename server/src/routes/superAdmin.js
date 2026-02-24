@@ -6,8 +6,9 @@ const db = require('../config/db');
 router.post('/restaurants', async (req, res, next) => {
   const { name } = req.body;
   if (!name) return res.status(400).json({ error: 'name required' });
+  let client;
   try {
-    const client = await db.pool.connect();
+    client = await db.pool.connect();
     await client.query('BEGIN');
     const result = await client.query(
       'INSERT INTO restaurants(name) VALUES($1) RETURNING id',
@@ -24,8 +25,16 @@ router.post('/restaurants', async (req, res, next) => {
     await client.query('COMMIT');
     res.status(201).json({ restaurantId });
   } catch (err) {
-    await client.query('ROLLBACK');
+    if (client) {
+      try {
+        await client.query('ROLLBACK');
+      } catch (rollbackErr) {
+        console.error('rollback failed', rollbackErr);
+      }
+    }
     next(err);
+  } finally {
+    if (client) client.release();
   }
 });
 

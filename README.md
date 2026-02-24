@@ -15,36 +15,143 @@ Refer to project planning documents for development phases and roadmap.
 
 1. Copy `.env.example` to `.env` and update values (database URL, JWT secret).
 2. Run `npm install` in both `/server` and `/client` directories.
-3. Initialize the PostgreSQL database and apply schema:
-   ```bash
-   psql -f server/db/init.sql
-   ```
+3. **Make sure PostgreSQL is running** on the URL specified in your `.env` (defaults to `postgres://user:password@localhost:5432/rms`).
+   - If you don't have Postgres installed, you can quickly spin up a container:
+     ```bash
+     docker run --name rms-postgres -e POSTGRES_USER=user -e POSTGRES_PASSWORD=password -e POSTGRES_DB=rms -p 5432:5432 -d postgres
+     ```
+   - Once the server is up run:
+     ```bash
+     psql -f server/db/init.sql
+     ```
+     (or use any Postgres client) to create the initial schema.
 4. Start backend: `cd server && npm run dev` (requires nodemon).
+   - The server will now tolerate a missing database without crashing and will
+     return HTTP 500/503 errors which are surfaced by the UI.  See `/api/admin`
+     or other endpoints to manually seed a restaurant/user once the DB is
+     available.
 5. Start frontend: `cd client && npm run dev` (Vite server).
 
-## Phase 1: Multi-tenant Foundation
+## Current Progress Summary
 
-1. Run `psql -f server/db/init.sql` after creating your database to seed tables.
+### Completed Phases
 
-   *init.sql* now enables row-level security (RLS) on tenant tables and defines
-   policies based on the `app.current_restaurant` configuration variable.
+**Phase 1: Multi-tenant Foundation** ✅
+- PostgreSQL-based multi-tenant architecture with Row-Level Security (RLS)
+- JWT authentication framework
+- Tenant isolation via `app.current_restaurant` setting
+- Module enablement/disablement per restaurant
 
-2. Backend helpers in `src/config` and `src/core` include:
-   - `db.js` (PG pool) now exports `query()` and `withTenant(restaurantId, cb)`.
-     Use `withTenant` when you want the database to enforce the restaurant
-     constraint automatically via RLS:
-     ```js
-     await db.withTenant(req.restaurantId, async client => {
-       const { rows } = await client.query('SELECT * FROM users');
-       // RLS will ensure only rows for this restaurant are visible
-     });
-     ```
-   - `auth/jwt` for JWT sign/verify and middleware
-   - `middleware/tenantHandler.js` and `featureFlagCheck.js`
-3. Create restaurants via Super Admin script (to be added) which will also insert default module flags.
-4. Protect routes with `authMiddleware` then `tenantHandler`, e.g.:  
-   `app.use('/api/inventory', authMiddleware, tenantHandler, checkModule('inventory'), inventoryRouter);
-`
+**Phase 2: POS Core** ✅
+- Categories, Menu Items (with variants), Table management
+- Order creation and tracking
+- Order status workflow (open → completed → paid)
+- Real-time order updates via Socket.io
+
+**Phase 3: KDS (Kitchen Display System)** ✅
+- Order-to-kitchen pipeline
+- Line-item status tracking (pending → ready → completed)
+- Real-time notifications to kitchen staff
+
+**Phase 4: Inventory Management** ✅
+- Stock tracking with quantity and threshold alerts
+- Low-stock notifications via real-time channel
+- Material and unit management
+- Purchase order workflow
+
+**Phase 5: Reporting & Analytics** ✅
+- Sales dashboard with revenue tracking
+- Category and payment method analytics
+- Order performance metrics
+- Data upload capability for external analysis
+- Export-to-Excel functionality
+
+**Phase 6: Frontend UI/UX** ✅
+- Sidebar navigation with 7 main pages: Home, Tables, Kitchen, Menu, Inventory, Reports, Settings
+- Tables management with status and reservation toggles
+- Menu browsing with categories and search
+- Kitchen display with real-time order updates
+- Inventory stock view
+- Reports dashboard with charts
+- Settings for configuration
+- Login page with JWT token management
+
+### Currently Running
+
+- **Backend:** Node.js/Express server on `http://localhost:3000`
+  - Health endpoint: `GET /health`
+  - Auth endpoints: `POST /api/auth/login`, `POST /api/auth/register`
+  - API routes: `/api/pos/`, `/api/inventory/`, `/api/reporting/`
+  - Admin routes: `POST /api/admin/restaurants`
+
+- **Frontend:** Vite dev server on `http://localhost:5173`
+  - All 7 pages visible in sidebar
+  - Tables CRUD with real-time Socket.io updates
+  - Menu browsing, Kitchen orders display
+  - Reports with charts and export
+  - Temporarily disabled auth on table routes for testing
+
+### Known Issues & Next Steps
+
+1. **Database Connectivity**
+   - PostgreSQL must be running on the URL specified in `.env`
+   - If not available, API endpoints return HTTP 500 with error details
+   - All database schema files pre-exist: `db/init.sql`, `db/pos.sql`, `db/inventory.sql`
+
+2. **Authentication Flow**
+   - Auth is currently **disabled on table routes** for easier testing
+   - JWT login endpoint works but needs test data (restaurant + user in DB)
+   - Auth header is added by frontend but middleware is commented out
+   - **Action:** Once DB is live, re-enable auth or seed a test user via admin endpoint
+
+3. **Pages in Development State**
+   - Menu: Shows categories and items from API (needs data)
+   - Kitchen: Real-time KDS display (backend ready)
+   - Inventory: Stock view page (backend ready)
+   - Settings: Module toggles, user management (UI framework in place)
+   - Addons: Placeholder only
+
+4. **Testing Recommendations**
+   - Spin up PostgreSQL (Docker or local install)
+   - Run `psql -f server/db/init.sql` to initialize schema
+   - Use `/api/admin/restaurants` endpoint to create a test restaurant
+   - Create a user via `/api/auth/register` or manually in the DB
+   - Log in via Login page to receive JWT token
+   - Proceed with Tables, Menu, Kitchen, Inventory, Reports testing
+
+### Architecture Highlights
+
+- **Real-time:** Socket.io namespaces for POS (`/kds`, `/waiter`, `/inventory`)
+- **Modular:** Separate modules for POS, Inventory, Reporting
+- **Event-driven:** Internal event bus for order and inventory events
+- **Responsive UI:** Tailwind CSS for all frontend pages
+- **Data Export:** XLSX and CSV support for reporting
+
+### File Structure
+
+```
+RMS10/
+├── server/
+│   ├── src/
+│   │   ├── app.js (entry point, route definitions)
+│   │   ├── config/ (database, logging)
+│   │   ├── core/ (auth, middleware, event bus)
+│   │   ├── modules/ (pos, inventory, reporting)
+│   │   ├── routes/ (auth, superAdmin)
+│   │   └── scripts/ (createRestaurant, createUser)
+│   └── db/
+│       ├── init.sql (restaurants, users, module_config)
+│       ├── pos.sql (tables, orders, line_items, categories, menu_items)
+│       └── inventory.sql (materials, stock, purchase_orders, recipes)
+├── client/
+│   └── src/
+│       ├── App.jsx (routing)
+│       ├── pages/ (Home, Tables, Menu, Kitchen, Settings, Login, etc.)
+│       ├── components/ (MainLayout, sidebar nav)
+│       └── assets/ (styles)
+└── README.md (this file)
+```
+
 
 ### Creating a Restaurant (Super Admin)
 

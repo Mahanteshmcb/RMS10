@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import MainLayout from './components/MainLayout';
 import Home from './pages/Home';
 import Tables from './pages/Tables';
@@ -8,28 +8,27 @@ import Menu from './pages/Menu';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import Addons from './pages/Addons';
+import Login from './pages/Login';
 import KDS from './pages/KDS';
 import Waiter from './pages/Waiter';
 
 export default function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<MainLayout />}>
-          <Route index element={<Home />} />
-          <Route path="tables" element={<Tables />} />
-          <Route path="kitchen" element={<Kitchen />} />
-          <Route path="inventory/*" element={<Inventory />} />
-          <Route path="menu" element={<Menu />} />
-          <Route path="reports" element={<Reports />} />
-          <Route path="settings" element={<Settings />} />
-          <Route path="addons" element={<Addons />} />
-          <Route path="login" element={<Login />} />
-          {/* legacy routes left outside layout if needed */}
-          <Route path="kds" element={<KDS />} />
-          <Route path="waiter" element={<Waiter />} />
-        </Route>
-      </Routes>
-    </Router>
+    <Routes>
+      <Route path="/" element={<MainLayout />}>
+        <Route index element={<Home />} />
+        <Route path="tables" element={<Tables />} />
+        <Route path="kitchen" element={<Kitchen />} />
+        <Route path="inventory/*" element={<Inventory />} />
+        <Route path="menu" element={<Menu />} />
+        <Route path="reports" element={<Reports />} />
+        <Route path="settings" element={<Settings />} />
+        <Route path="addons" element={<Addons />} />
+        <Route path="login" element={<Login />} />
+        {/* legacy routes left outside layout if needed */}
+        <Route path="kds" element={<KDS />} />
+        <Route path="waiter" element={<Waiter />} />
+      </Route>
+    </Routes>
   );
 }

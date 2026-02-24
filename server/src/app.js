@@ -119,3 +119,12 @@ function defineRoutes() {
 
   app.use('/api/pos', authMiddleware, tenantHandler, checkModule('pos'), posRouter);
 }
+
+// global error handler (logs and sends JSON)
+app.use((err, req, res, next) => {
+  console.error('ERROR:', err);
+  if (res.headersSent) {
+    return next(err);
+  }
+  res.status(err.status || 500).json({ error: err.message || 'Internal server error' });
+});

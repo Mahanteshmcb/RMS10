@@ -29,4 +29,3 @@ async function low(req, res, next) {
 }
 
 module.exports = { list, upsert, low };
-module.exports = { list, upsert };
