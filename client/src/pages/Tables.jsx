@@ -3,6 +3,8 @@ import { io as socketIo } from 'socket.io-client';
 
 export default function Tables() {
   const [tables, setTables] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [newName, setNewName] = useState('');
   const [newSeats, setNewSeats] = useState(1);
   const [editing, setEditing] = useState(null);
@@ -16,10 +18,19 @@ export default function Tables() {
   };
 
   const fetchTables = () => {
+    setLoading(true);
+    setError(null);
     fetch('/api/pos/tables', { headers: getHeaders() })
-      .then(r => r.json())
+      .then(r => {
+        if (!r.ok) throw new Error('fetch failed');
+        return r.json();
+      })
       .then(data => setTables(data))
-      .catch(err => console.error('tables fetch', err));
+      .catch(err => {
+        console.error('tables fetch', err);
+        setError('Unable to load tables');
+      })
+      .finally(() => setLoading(false));
   };
 
   useEffect(() => {
@@ -88,6 +99,8 @@ export default function Tables() {
       <p>Add or manage tables and chair counts. Guests can reserve tables via
       the public menu or an in‑restaurant scanner will mark them occupied; waiters
       can also toggle status manually.</p>
+      {loading && <p>Loading...</p>}
+      {error && <p className="text-red-600">{error}</p>}
       <div className="mt-4">
         <input
           type="text"
