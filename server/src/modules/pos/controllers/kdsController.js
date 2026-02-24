@@ -35,4 +35,4 @@ async function markReady(req, res, next) {
   }
 }
 
-module.exports = { markReady };
+module.exports = { listOrders, markReady };

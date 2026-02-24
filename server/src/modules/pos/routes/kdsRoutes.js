@@ -1,5 +1,5 @@
 const express = require('express');
-const { markReady } = require('../controllers/kdsController');
+const { listOrders, markReady } = require('../controllers/kdsController');
 const { authorize } = require('../../../core/auth/authorize');
 
 const router = express.Router();
