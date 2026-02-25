@@ -13,26 +13,85 @@ Refer to project planning documents for development phases and roadmap.
 
 ## Setup Instructions
 
-1. Copy `.env.example` to `.env` and update values (database URL, JWT secret).
-2. Run `npm install` in both `/server` and `/client` directories.
-3. **Make sure PostgreSQL is running** on the URL specified in your `.env` (defaults to `postgres://user:password@localhost:5432/rms`).
-   - If you don't have Postgres installed, you can quickly spin up a container:
-     ```bash
-     docker run --name rms-postgres -e POSTGRES_USER=user -e POSTGRES_PASSWORD=password -e POSTGRES_DB=rms -p 5432:5432 -d postgres
-     ```
-   - Once the server is up run:
-     ```bash
-     psql -f server/db/init.sql
-     ```
-     (or use any Postgres client) to create the initial schema.
-4. Start backend: `cd server && npm run dev` (requires nodemon).
-   - The server will now tolerate a missing database without crashing and will
-     return HTTP 500/503 errors which are surfaced by the UI.  See `/api/admin`
-     or other endpoints to manually seed a restaurant/user once the DB is
-     available.
-5. Start frontend: `cd client && npm run dev` (Vite server).
+### Quick Start (Docker Recommended)
+
+1. **Clone and install:**
+   ```bash
+   git clone <repo-url>
+   cd RMS10
+   npm install --prefix server
+   npm install --prefix client
+   ```
+
+2. **Start PostgreSQL with Docker Compose:**
+   ```bash
+   docker-compose up -d
+   ```
+   This will:
+   - Start PostgreSQL on port 5432
+   - Automatically initialize the database schema
+   - Create a volume for data persistence
+
+3. **Seed database with test data:**
+   ```bash
+   cd server
+   node src/scripts/seedData.js
+   ```
+   This creates:
+   - 1 demo restaurant
+   - 4 test users (admin, manager, waiter, chef)
+   - 4 menu categories with 9 items
+   - 6 dining tables
+   - Inventory materials and stock
+
+4. **Start both servers:**
+   
+   **Terminal 1 - Backend:**
+   ```bash
+   cd server
+   npm start
+   ```
+   Backend runs on `http://localhost:3000`
+
+   **Terminal 2 - Frontend:**
+   ```bash
+   cd client
+   npm run dev
+   ```
+   Frontend runs on `http://localhost:5173` (or 5174 if 5173 is busy)
+
+5. **Log in with test credentials:**
+   - Username: `admin` | Password: `admin123`
+   - Or any of: manager/manager123, waiter/waiter123, chef/chef123
+
+### Manual Setup (Without Docker)
+
+1. Install PostgreSQL locally
+2. Create a database:
+   ```bash
+   createdb -U postgres rms
+   ```
+3. Initialize schema:
+   ```bash
+   psql -U postgres -d rms -f server/db/init.sql
+   psql -U postgres -d rms -f server/db/pos.sql
+   psql -U postgres -d rms -f server/db/inventory.sql
+   ```
+4. Create `.env` file in `/server`:
+   ```
+   DATABASE_URL=postgres://postgres:password@localhost:5432/rms
+   JWT_SECRET=your-secret-key-here
+   PORT=3000
+   ```
+5. Run seed script:
+   ```bash
+   cd server
+   node src/scripts/seedData.js
+   ```
+6. Start servers as in steps 4-5 above
 
 ## Current Progress Summary
+
 
 ### Completed Phases
 
