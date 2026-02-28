@@ -45,6 +45,7 @@ CREATE TABLE orders (
   table_id INTEGER REFERENCES tables(id) ON DELETE SET NULL,
   status TEXT DEFAULT 'open', -- open, completed, cancelled
   total NUMERIC(10,2) DEFAULT 0,
+  total_amount NUMERIC(10,2) DEFAULT 0,
   created_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -96,3 +97,7 @@ CREATE POLICY order_items_tenant ON order_items
       SELECT id FROM orders WHERE restaurant_id = current_setting('app.current_restaurant')::int
     )
   );
+
+-- Ensure existing DBs have the `total_amount` column used by APIs
+-- This is idempotent and safe to run against older databases.
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS total_amount NUMERIC(10,2) DEFAULT 0;

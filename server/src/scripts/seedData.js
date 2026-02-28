@@ -5,10 +5,31 @@
 require('dotenv').config();
 const db = require('../config/db');
 const bcrypt = require('bcrypt');
+const { makeSlug } = require('../utils/slug');
+
+async function ensureSlugColumn() {
+  try {
+    // Check if slug column exists, if not add it
+    await db.query(`
+      ALTER TABLE restaurants ADD COLUMN slug TEXT UNIQUE;
+    `);
+    console.log('⚠️  Added slug column to restaurants table');
+  } catch (err) {
+    // Column likely already exists
+    if (!err.message.includes('already exists')) {
+      console.warn('Migration check:', err.message);
+    }
+  }
+}
 
 async function main() {
   try {
     console.log('🌱 Starting database seed...\n');
+
+    // Ensure schema is up-to-date
+    console.log('🔄 Checking schema...');
+    await ensureSlugColumn();
+    console.log();
 
     // clear previous data to allow reruns
     console.log('🧹 Truncating existing tables...');
@@ -19,11 +40,14 @@ async function main() {
 
     // 1. Create restaurant
     console.log('📍 Creating restaurant...');
+    const restaurantName = 'Demo Restaurant';
+    const slug = makeSlug(restaurantName) || `r${Date.now()}`;
     const restaurantRes = await db.query(
-      "INSERT INTO restaurants(name) VALUES('Demo Restaurant') RETURNING id"
+      "INSERT INTO restaurants(name, slug) VALUES($1,$2) RETURNING id",
+      [restaurantName, slug]
     );
     const restaurantId = restaurantRes.rows[0].id;
-    console.log(`✅ Created restaurant ID: ${restaurantId}\n`);
+    console.log(`✅ Created restaurant ID: ${restaurantId} (slug: ${slug})\n`);
 
     // 2. Enable modules for restaurant
     console.log('🔧 Enabling modules...');

@@ -3,6 +3,7 @@
 CREATE TABLE restaurants (
   id SERIAL PRIMARY KEY,
   name TEXT NOT NULL,
+  slug TEXT NOT NULL UNIQUE,
   config JSONB DEFAULT '{}',
   created_at TIMESTAMP DEFAULT NOW()
 );
@@ -36,6 +37,11 @@ CREATE POLICY modules_tenant_isolation ON module_config
 
 -- Future tables (e.g. menu_items, orders) should also activate RLS
 
+-- if you previously ran the SQL without slug, manually add and populate:
+-- ALTER TABLE restaurants ADD COLUMN slug TEXT;
+-- UPDATE restaurants SET slug = LOWER(REGEXP_REPLACE(name, '\\s+', '-', 'g')) || '-' || id;
+-- ALTER TABLE restaurants ALTER COLUMN slug SET NOT NULL;
+-- CREATE UNIQUE INDEX ON restaurants(slug);
 -- helpers for setting tenant (optional):
 -- SELECT set_config('app.current_restaurant','<id>', false);
 

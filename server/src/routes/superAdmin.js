@@ -1,18 +1,20 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
+const { makeSlug } = require('../utils/slug');
 
 // NOTE: this route should be protected in real deployments
 router.post('/restaurants', async (req, res, next) => {
   const { name } = req.body;
   if (!name) return res.status(400).json({ error: 'name required' });
+  const slug = makeSlug(name) || `r${Date.now()}`;
   let client;
   try {
     client = await db.pool.connect();
     await client.query('BEGIN');
     const result = await client.query(
-      'INSERT INTO restaurants(name) VALUES($1) RETURNING id',
-      [name]
+      'INSERT INTO restaurants(name, slug) VALUES($1,$2) RETURNING id',
+      [name, slug]
     );
     const restaurantId = result.rows[0].id;
     const modules = ['pos', 'inventory', 'kds', 'reporting'];
@@ -23,7 +25,7 @@ router.post('/restaurants', async (req, res, next) => {
       );
     }
     await client.query('COMMIT');
-    res.status(201).json({ restaurantId });
+    res.status(201).json({ restaurantId, slug });
   } catch (err) {
     if (client) {
       try {

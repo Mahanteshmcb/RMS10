@@ -22,27 +22,37 @@ Refer to project planning documents for development phases and roadmap.
    npm install --prefix server
    npm install --prefix client
    ```
+   > 💡 After editing `vite.config.js` or changing client packages, restart the
+   > frontend server (`npm run dev`) so the proxy takes effect.
 
 2. **Start PostgreSQL with Docker Compose:**
    ```bash
    docker-compose up -d
    ```
    This will:
-   - Start PostgreSQL on port 5432
+   - Start PostgreSQL on port 5434
    - Automatically initialize the database schema
    - Create a volume for data persistence
 
 3. **Seed database with test data:**
    ```bash
    cd server
+   npm install # in case new dependencies like qrcode were added
    node src/scripts/seedData.js
    ```
    This creates:
-   - 1 demo restaurant
+   - 1 demo restaurant (slug generated from name)
    - 4 test users (admin, manager, waiter, chef)
    - 4 menu categories with 9 items
    - 6 dining tables
    - Inventory materials and stock
+
+   You can create additional restaurants via the CLI or `/api/admin/restaurants`.
+   Each restaurant has an `id` and `slug` which are exposed on public listings.
+   Multiple restaurants will appear on the home page for guests and users.
+
+   **Note:** If you restored from an earlier database, you may need to add the
+   `slug` column manually (see schema comments above) and populate values.
 
 4. **Start both servers:**
    
@@ -257,6 +267,21 @@ Both methods insert the restaurant and default module flags.
    Response: `{ "token": "<jwt>" }`.
 3. Send the token as `Authorization: Bearer <jwt>` and/or set `x-restaurant-id` header when calling protected APIs.
 4. Example: `GET /api/pos/test` should return enabled message if the token and headers are correct.
+
+### Public Browsing & QR Codes
+
+- **List restaurants:** `GET /api/public/restaurants` returns `{id,name,slug}` for all enabled restaurants. Make sure your frontend has Vite proxy configured (`/api` → `http://localhost:3000`).
+- **Menu page:** users can visit `/r/:slug` on the frontend or call `GET /api/public/restaurants/:slug` to fetch the menu and categories.
+- **Restaurant QR code:** `GET /api/public/qr/restaurant/:slug` returns a PNG with a link to `/r/:slug`.
+- **Table QR code:** `GET /api/public/qr/restaurant/:slug/table/:tableId` returns a PNG linking to `/r/:slug?table=<id>`.
+
+Frontend exposes:
+
+- `/public/restaurants` page with links to each restaurant.
+- `/r/:slug` public menu page that also displays its own QR code for sharing.
+
+These pages are unauthenticated; customers can browse menus, scan table codes,
+and place orders if the ordering UI is enabled.
 
 ### WebSockets Support
 

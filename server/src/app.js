@@ -17,6 +17,19 @@ const tenantHandler = require('./core/middleware/tenantHandler');
 
 // sample health check route
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
+
+// public endpoints (no auth) for browsing restaurants & menu
+const publicRouter = require('./routes/publicRoutes');
+app.use('/api/public', publicRouter);
+
+// public order endpoints (customer ordering)
+const publicOrderRouter = require('./routes/publicOrderRoutes');
+app.use('/api/public', publicOrderRouter);
+
+// Onboarding routes (request is public, admin endpoints protected)
+const onboardingRouter = require('./routes/onboardingRoutes');
+app.use('/api/onboarding', onboardingRouter);
+
 // SuperAdmin routes (no tenant or auth for now - should be secured separately)
 const superAdminRouter = require('./routes/superAdmin');
 app.use('/api/admin', superAdminRouter);
@@ -114,6 +127,42 @@ function defineRoutes() {
   // reporting module
   const reportingRouter = require('./modules/reporting/routes/reportRoutes');
   app.use('/api/reporting', authMiddleware, tenantHandler, checkModule('reporting'), reportingRouter);
+
+  // staff management module (not a feature flag module)
+  const staffRouter = require('./routes/staffRoutes');
+  app.use('/api/staff', authMiddleware, tenantHandler, staffRouter);
+
+  // module config management (for settings UI)
+  const moduleRouter = require('./routes/moduleRoutes');
+  app.use('/api/modules', authMiddleware, tenantHandler, moduleRouter);
+
+  // endpoint to fetch basic restaurant info (name, slug)
+  posRouter.get('/restaurant', async (req, res, next) => {
+    try {
+      const result = await require('./config/db').query(
+        'SELECT id, name, slug FROM restaurants WHERE id = $1',
+        [req.restaurantId]
+      );
+      if (result.rows.length === 0) return res.status(404).json({ error: 'not found' });
+      res.json(result.rows[0]);
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // update restaurant info (name, email)
+  posRouter.put('/restaurant', authorize('manage_menu'), async (req, res, next) => {
+    try {
+      const { name, email } = req.body;
+      const result = await require('./config/db').query(
+        'UPDATE restaurants SET name=$1, email=$2 WHERE id=$3 RETURNING id, name, slug, email',
+        [name, email, req.restaurantId]
+      );
+      res.json(result.rows[0]);
+    } catch (err) {
+      next(err);
+    }
+  });
 
   // placeholder test route
   posRouter.get('/test', authorize('view_menu'), (req, res) =>

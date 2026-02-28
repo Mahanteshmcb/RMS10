@@ -22,8 +22,8 @@ async function withTenant(restaurantId, callback) {
   if (!restaurantId) throw new Error('restaurantId required');
   const client = await pool.connect();
   try {
-    // set the custom GUC for the current tenant
-    await client.query('SET LOCAL app.current_restaurant = $1', [restaurantId]);
+    // set the custom GUC for the current tenant; cannot parameterize SET
+    await client.query(`SET LOCAL app.current_restaurant = ${Number(restaurantId)}`);
     return await callback(client);
   } finally {
     client.release();

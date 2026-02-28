@@ -10,10 +10,18 @@ function checkModule(moduleName) {
         'SELECT enabled FROM module_config WHERE restaurant_id=$1 AND module=$2',
         [restaurantId, moduleName]
       );
+
+      // allow owners and managers to access module routes even if module flag not enabled
+      const bypassRoles = ['owner', 'manager'];
+      const userRole = req.user && req.user.role;
+
       if (result.rows.length === 0 || !result.rows[0].enabled) {
+        if (userRole && bypassRoles.includes(userRole)) {
+          return next();
+        }
         return res.status(403).json({ error: `Module ${moduleName} disabled` });
       }
-      next();
+      return next();
     } catch (err) {
       next(err);
     }
