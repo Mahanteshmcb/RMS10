@@ -20,7 +20,7 @@ const Dashboard = {
           [restaurantId, today.toISOString()]
         ),
         client.query(
-          `SELECT COUNT(*) as count FROM dining_tables WHERE restaurant_id=$1`,
+          `SELECT COUNT(*) as count FROM tables WHERE restaurant_id=$1`,
           [restaurantId]
         ),
       ]);

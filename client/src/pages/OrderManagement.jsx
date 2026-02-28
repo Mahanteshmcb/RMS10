@@ -53,11 +53,12 @@ export default function OrderManagement() {
 
   const fetchPaymentMethods = async () => {
     try {
-      const response = await fetch(`/api/pos/restaurant/payment-methods`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      if (!restaurantInfo?.slug) return;
+      // use public endpoint; slug identifies restaurant
+      const response = await fetch(`/api/public/payment-methods/${restaurantInfo.slug}`);
       if (!response.ok) throw new Error('Failed to fetch payment methods');
       const methods = await response.json();
+      // public endpoint returns rows with { method }
       setPaymentMethods(methods.map(m => m.method));
     } catch (err) {
       console.error(err);

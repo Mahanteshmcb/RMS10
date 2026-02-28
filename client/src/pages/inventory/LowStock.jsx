@@ -1,13 +1,19 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useContext } from 'react';
 import { io } from 'socket.io-client';
+import AuthContext from '../../context/AuthContext';
 
 export default function LowStock() {
+  const { token } = useContext(AuthContext);
   const [items, setItems] = useState([]);
 
+  const authHeaders = () => token ? { Authorization: `Bearer ${token}` } : {};
+
   useEffect(() => {
-    fetch('/api/inventory/stock/low')
-      .then(r => r.json())
-      .then(setItems);
+    if (!token) return;
+    fetch('/api/inventory/stock/low', { headers: authHeaders() })
+      .then(r => r.ok ? r.json() : Promise.reject(new Error(`${r.status}`)))
+      .then(setItems)
+      .catch(e => console.error('Error fetching low stock:', e));
 
     const socket = io('http://localhost:3000/inventory');
     socket.on('low_stock', data => {
@@ -19,7 +25,7 @@ export default function LowStock() {
       });
     });
     return () => socket.disconnect();
-  }, []);
+  }, [token]);
 
   return (
     <div>

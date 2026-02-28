@@ -43,9 +43,12 @@ Refer to project planning documents for development phases and roadmap.
    This creates:
    - 1 demo restaurant (slug generated from name)
    - 4 test users (admin, manager, waiter, chef)
-   - 4 menu categories with 9 items
+   - 4 menu categories with 9 items (items now support `image_url` for pictures)
    - 6 dining tables
    - Inventory materials and stock
+
+   > 📌 The backend now auto-applies a runtime migration to add the `image_url` column if
+   > it is missing; re-seeding or manual ALTER is no longer required for older databases.
 
    You can create additional restaurants via the CLI or `/api/admin/restaurants`.
    Each restaurant has an `id` and `slug` which are exposed on public listings.
@@ -56,7 +59,7 @@ Refer to project planning documents for development phases and roadmap.
 
 4. **Start both servers:**
    
-   **Terminal 1 - Backend:**
+   **Terminal 1 - Backend:**                                                                                     
    ```bash
    cd server
    npm start
@@ -104,6 +107,8 @@ Refer to project planning documents for development phases and roadmap.
 
 
 ### Completed Phases
+
+* Role-based authorization extended to front-end screens (menu & inventory CRUD gated by owner/manager roles).
 
 **Phase 1: Multi-tenant Foundation** ✅
 - PostgreSQL-based multi-tenant architecture with Row-Level Security (RLS)
@@ -161,6 +166,81 @@ Refer to project planning documents for development phases and roadmap.
   - Temporarily disabled auth on table routes for testing
 
 ### Known Issues & Next Steps
+
+1. **Database Connectivity**
+   - PostgreSQL must be running on the URL specified in `.env`
+
+---
+
+### Developer Setup Guide
+
+Follow these steps to clone the repo and run the full website locally.
+
+1. **Clone repository:**
+   ```bash
+   git clone <repo-url> rms
+   cd rms
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   npm install --prefix server
+   npm install --prefix client
+   ```
+
+3. **Configure environment**
+   - Create `/server/.env` with:
+     ```text
+     DATABASE_URL=postgres://postgres:password@localhost:5432/rms
+     JWT_SECRET=your-secret-key
+     PORT=3000
+     FRONTEND_URL=http://localhost:5173
+     ```
+   - Adjust values as needed (e.g. container ports).
+
+4. **Bring up database**
+   - **Docker Compose (recommended):**
+     ```bash
+     docker-compose up -d
+     ```
+     PostgreSQL will run on `5434` and initialize the schema automatically.
+   - **Manual:**
+     ```bash
+     createdb -U postgres rms
+     psql -U postgres -d rms -f server/db/init.sql
+     psql -U postgres -d rms -f server/db/pos.sql
+     psql -U postgres -d rms -f server/db/inventory.sql
+     ```
+
+5. **Seed test data**
+   ```bash
+   cd server
+   node src/scripts/seedData.js
+   ```
+   Creates sample restaurant, users, menu, inventory, tables, etc.  Slugs are generated.
+
+6. **Start servers**
+   - Backend: `cd server && npm start` (runs on http://localhost:3000)
+   - Frontend: `cd client && npm run dev` (runs on http://localhost:5173)
+     > Vite proxies `/api` to backend automatically.
+
+7. **Login & Explore**
+   - Visit `http://localhost:5173/login`.
+   - Use `admin/admin123` or other seeded accounts.
+   - Navigate sidebar to POS, KDS, Menu, Inventory, Reports, Settings.
+   - Public menu available at `/r/<slug>` (see slug in owner dashboard or in seed output).
+
+8. **Additional commands**
+   - `npm run dev` (server) for auto-restart via nodemon.
+   - `npm run lint` or `npm test` if appeared in future updates.
+   - Use `node src/scripts/createRestaurant.js` / `createUser.js` to add fixtures.
+
+9. **Notes for contributors**
+   - New database columns should include `ALTER TABLE IF NOT EXISTS` migrations in SQL.
+   - To add a new module, follow existing pattern under `server/src/modules`.
+   - Frontend components live in `client/src/pages`; shared hooks under `hooks`.
+
+---
 
 1. **Database Connectivity**
    - PostgreSQL must be running on the URL specified in `.env`

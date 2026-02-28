@@ -28,11 +28,24 @@ router.get('/restaurants/:slug', async (req, res, next) => {
       [restaurantId]
     );
 
-    // flat items list
-    const itemsRes = await db.query(
-      'SELECT id, name, description, base_price AS price, category_id FROM menu_items WHERE restaurant_id = $1 ORDER BY name',
-      [restaurantId]
-    );
+    // flat items list (include image_url when available)
+    let itemsRes;
+    try {
+      itemsRes = await db.query(
+        'SELECT id, name, description, base_price AS price, category_id, image_url FROM menu_items WHERE restaurant_id = $1 ORDER BY name',
+        [restaurantId]
+      );
+    } catch (err) {
+      // if column doesn't exist, retry without it
+      if (err.code === '42703') {
+        itemsRes = await db.query(
+          'SELECT id, name, description, base_price AS price, category_id FROM menu_items WHERE restaurant_id = $1 ORDER BY name',
+          [restaurantId]
+        );
+      } else {
+        throw err;
+      }
+    }
 
     // payment methods
     const pmRes = await db.query(

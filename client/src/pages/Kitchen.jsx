@@ -33,7 +33,7 @@ export default function Kitchen() {
   useEffect(() => {
     fetchOrders();
     // connect to kds namespace for real-time updates
-    const socket = socketIo('/kds');
+    const socket = socketIo('http://localhost:3000/kds');
     socket.on('order_created', () => fetchOrders());
     socket.on('item_ready', () => fetchOrders());
     return () => socket.disconnect();

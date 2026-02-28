@@ -17,6 +17,7 @@ CREATE TABLE menu_items (
   description TEXT,
   base_price NUMERIC(10,2) NOT NULL,
   tax_rate NUMERIC(5,2) DEFAULT 0,
+  image_url TEXT,
   created_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -101,3 +102,6 @@ CREATE POLICY order_items_tenant ON order_items
 -- Ensure existing DBs have the `total_amount` column used by APIs
 -- This is idempotent and safe to run against older databases.
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS total_amount NUMERIC(10,2) DEFAULT 0;
+
+-- Add image_url to menu_items if missing
+ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS image_url TEXT;

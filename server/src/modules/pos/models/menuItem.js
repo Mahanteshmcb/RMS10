@@ -18,24 +18,24 @@ async function getById(restaurantId, id) {
 }
 
 async function create(restaurantId, data) {
-  const { category_id, name, description, base_price, tax_rate } = data;
+  const { category_id, name, description, base_price, tax_rate, image_url } = data;
   return db.withTenant(restaurantId, client =>
     client.query(
-      `INSERT INTO menu_items(restaurant_id, category_id, name, description, base_price, tax_rate)
-       VALUES($1,$2,$3,$4,$5,$6) RETURNING *`,
-      [restaurantId, category_id, name, description, base_price, tax_rate]
+      `INSERT INTO menu_items(restaurant_id, category_id, name, description, base_price, tax_rate, image_url)
+       VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
+      [restaurantId, category_id, name, description, base_price, tax_rate, image_url]
     )
   );
 }
 
 async function update(restaurantId, id, data) {
-  const { category_id, name, description, base_price, tax_rate } = data;
+  const { category_id, name, description, base_price, tax_rate, image_url } = data;
   return db.withTenant(restaurantId, client =>
     client.query(
       `UPDATE menu_items
-       SET category_id=$1, name=$2, description=$3, base_price=$4, tax_rate=$5
-       WHERE id=$6 RETURNING *`,
-      [category_id, name, description, base_price, tax_rate, id]
+       SET category_id=$1, name=$2, description=$3, base_price=$4, tax_rate=$5, image_url=$6
+       WHERE id=$7 RETURNING *`,
+      [category_id, name, description, base_price, tax_rate, image_url, id]
     )
   );
 }

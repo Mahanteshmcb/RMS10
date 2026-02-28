@@ -1,21 +1,24 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useContext } from 'react';
+import AuthContext from '../../context/AuthContext';
 
-function AddItemForm({ orderId, refresh }) {
+function AddItemForm({ orderId, refresh, authHeaders }) {
   const [matId, setMatId] = useState('');
   const [qty, setQty] = useState(1);
   const [price, setPrice] = useState(0);
   const [materials, setMaterials] = useState([]);
+  const { token } = useContext(AuthContext);
 
   useEffect(() => {
-    fetch('/api/inventory/materials').then(r => r.json()).then(setMaterials);
-  }, []);
+    if (!token) return;
+    fetch('/api/inventory/materials', { headers: authHeaders() }).then(r => r.ok ? r.json() : Promise.reject(new Error(`${r.status}`))).then(setMaterials).catch(e => console.error('Error fetching materials:', e));
+  }, [token]);
 
   const submit = () => {
     if (!matId) return alert('select material');
     if (qty <= 0) return alert('quantity must be positive');
     fetch(`/api/inventory/purchase-orders/${orderId}/items`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
       body: JSON.stringify({ raw_material_id: matId, quantity: qty, unit_price: price }),
     })
       .then(() => {
@@ -23,7 +26,8 @@ function AddItemForm({ orderId, refresh }) {
         setQty(1);
         setPrice(0);
         refresh();
-      });
+      })
+      .catch(e => console.error('Error adding item:', e));
   };
 
   return (
@@ -44,6 +48,7 @@ function AddItemForm({ orderId, refresh }) {
 
 
 export default function PurchaseOrders() {
+  const { token } = useContext(AuthContext);
   const [orders, setOrders] = useState([]);
   const [vendorId, setVendorId] = useState('');
   const [vendors, setVendors] = useState([]);
@@ -54,28 +59,33 @@ export default function PurchaseOrders() {
   const [editVendor, setEditVendor] = useState('');
   const [editStatus, setEditStatus] = useState('pending');
 
+  const authHeaders = () => token ? { Authorization: `Bearer ${token}` } : {};
+
   useEffect(() => {
-    fetch('/api/inventory/purchase-orders').then(r => r.json()).then(setOrders);
-    fetch('/api/inventory/vendors').then(r => r.json()).then(setVendors);
-  }, []);
+    if (!token) return;
+    fetch('/api/inventory/purchase-orders', { headers: authHeaders() }).then(r => r.ok ? r.json() : Promise.reject(new Error(`${r.status}`))).then(setOrders).catch(e => console.error('Error fetching orders:', e));
+    fetch('/api/inventory/vendors', { headers: authHeaders() }).then(r => r.ok ? r.json() : Promise.reject(new Error(`${r.status}`))).then(setVendors).catch(e => console.error('Error fetching vendors:', e));
+  }, [token]);
 
   function create() {
     if (!vendorId) return alert('select vendor');
     fetch('/api/inventory/purchase-orders', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
       body: JSON.stringify({ vendor_id: vendorId, status }),
     })
-      .then(r => r.json())
-      .then(o => setOrders(prev => [...prev, o]));
+      .then(r => r.ok ? r.json() : Promise.reject(new Error(`${r.status}`)))
+      .then(o => setOrders(prev => [...prev, o]))
+      .catch(e => console.error('Error creating order:', e));
     setVendorId('');
     setStatus('pending');
   }
 
   const loadItems = orderId => {
-    fetch(`/api/inventory/purchase-orders/${orderId}/items`)
-      .then(r => r.json())
-      .then(rows => setItemsMap(prev => ({ ...prev, [orderId]: rows })));
+    fetch(`/api/inventory/purchase-orders/${orderId}/items`, { headers: authHeaders() })
+      .then(r => r.ok ? r.json() : Promise.reject(new Error(`${r.status}`)))
+      .then(rows => setItemsMap(prev => ({ ...prev, [orderId]: rows })))
+      .catch(e => console.error('Error loading items:', e));
   };
 
   const updateOrder = (id, vendor, stat) => {
@@ -175,8 +185,9 @@ export default function PurchaseOrders() {
                     </button>
                     <button
                       onClick={() => {
-                        fetch(`/api/inventory/purchase-orders/${o.id}`, { method: 'DELETE' })
-                          .then(() => setOrders(prev => prev.filter(p => p.id !== o.id)));
+                        fetch(`/api/inventory/purchase-orders/${o.id}`, { method: 'DELETE', headers: authHeaders() })
+                          .then(() => setOrders(prev => prev.filter(p => p.id !== o.id)))
+                          .catch(e => console.error('Error deleting order:', e));
                       }}
                       className="text-red-500 text-sm"
                     >
@@ -210,8 +221,9 @@ export default function PurchaseOrders() {
                   <td className="px-2 py-1">
                     <button
                       onClick={() => {
-                        fetch(`/api/inventory/purchase-orders/${orderId}/items/${i.id}`, { method: 'DELETE' })
-                          .then(() => loadItems(orderId));
+                        fetch(`/api/inventory/purchase-orders/${orderId}/items/${i.id}`, { method: 'DELETE', headers: authHeaders() })
+                          .then(() => loadItems(orderId))
+                          .catch(e => console.error('Error deleting item:', e));
                       }}
                       className="text-red-500 text-sm"
                     >
@@ -222,7 +234,7 @@ export default function PurchaseOrders() {
               ))}
             </tbody>
           </table>
-          <AddItemForm orderId={orderId} refresh={() => loadItems(orderId)} />
+          <AddItemForm orderId={orderId} refresh={() => loadItems(orderId)} authHeaders={authHeaders} />
         </div>
       ))}
       <div className="space-x-2">

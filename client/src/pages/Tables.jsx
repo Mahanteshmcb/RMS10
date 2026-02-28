@@ -39,7 +39,7 @@ export default function Tables() {
 
   useEffect(() => {
     fetchTables();
-    const socket = socketIo();
+    const socket = socketIo('http://localhost:3000');
     socket.on('table_update', () => fetchTables());
     return () => socket.disconnect();
   }, []);

@@ -1,4 +1,6 @@
+import React, { useState, useEffect } from 'react';
 import { NavLink, Routes, Route } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
 import Units from './Units';
 import Materials from './Materials';
 import Vendors from './Vendors';
@@ -8,16 +10,34 @@ import PurchaseOrders from './PurchaseOrders';
 import LowStock from './LowStock';
 
 export default function Inventory() {
+  const { token, loading } = useAuth();
   const [error, setError] = useState(null);
+
+  const authHeaders = () => {
+    return token ? { Authorization: 'Bearer ' + token } : {};
+  };
 
   // quick check to surface permission errors or missing module
   useEffect(() => {
-    fetch('/api/inventory/units')
+    if (!token || loading) return;
+    fetch('/api/inventory/units', { headers: authHeaders() })
       .then(r => {
         if (!r.ok) throw new Error(`Inventory API ${r.status}`);
+        return r.json();
       })
       .catch(e => setError(e.message));
-  }, []);
+  }, [token, loading]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (error) {
     return (

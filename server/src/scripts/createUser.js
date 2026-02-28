@@ -1,7 +1,7 @@
 // run as `node src/scripts/createUser.js <username> <password> <role> <restaurantId>`
 
 const bcrypt = require('bcrypt');
-const db = require('../../config/db');
+const db = require('../config/db');
 
 async function main() {
   const [username, password, role, restaurantId] = process.argv.slice(2);

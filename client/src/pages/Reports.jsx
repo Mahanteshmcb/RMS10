@@ -1,6 +1,7 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useContext } from 'react';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
+import AuthContext from '../context/AuthContext';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -27,13 +28,14 @@ ChartJS.register(
 
 
 export default function Reports() {
+  const { token, loading } = useContext(AuthContext);
   const [error, setError] = useState(null);
   const [sales, setSales] = useState([]);
   const [topItems, setTopItems] = useState([]);
   const [start, setStart] = useState('');
   const [end, setEnd] = useState('');
   const [limit, setLimit] = useState(10);
-  const [summary, setSummary] = useState({});
+    const [summary, setSummary] = useState({});
   const [active, setActive] = useState([]);
   const [revenueByCategory, setRevenueByCategory] = useState([]);
   const [revenueByPayment, setRevenueByPayment] = useState([]);
@@ -53,7 +55,7 @@ export default function Reports() {
     const params = new URLSearchParams();
     if (start) params.append('start', start);
     if (end) params.append('end', end);
-    fetch(`/api/reporting/sales?${params.toString()}`)
+      fetch(`/api/reporting/sales?${params.toString()}`, { headers: authHeaders() })
       .then(r => {
         if (!r.ok) throw new Error(`sales ${r.status}`);
         return r.json();
@@ -63,53 +65,59 @@ export default function Reports() {
   };
 
   const fetchTop = () => {
-    fetch(`/api/reporting/top-items?limit=${limit}`)
-      .then(r => r.json())
-      .then(setTopItems);
+      fetch(`/api/reporting/top-items?limit=${limit}`, { headers: authHeaders() })
+        .then(r => {
+          if (!r.ok) throw new Error(`top-items ${r.status}`);
+          return r.json();
+        })
+        .then(setTopItems)
+        .catch(e => setError(e.message));
   };
 
   useEffect(() => {
+    if (loading || !token) return;
     fetchSales();
     fetchTop();
-    fetch('/api/reporting/dashboard/summary')
-      .then(r => {
-        if (!r.ok) throw new Error(`dashboard summary ${r.status}`);
-        return r.json();
-      })
-      .then(setSummary)
-      .catch(e => setError(e.message));
-    fetch('/api/reporting/dashboard/active-orders')
+      fetch('/api/reporting/dashboard/summary', { headers: authHeaders() })
+        .then(r => {
+          if (!r.ok) throw new Error(`dashboard summary ${r.status}`);
+          return r.json();
+        })
+        .then(setSummary)
+        .catch(e => setError(e.message));
+    fetch('/api/reporting/dashboard/active-orders', { headers: authHeaders() })
       .then(r => {
         if (!r.ok) throw new Error(`active-orders ${r.status}`);
         return r.json();
       })
       .then(setActive)
       .catch(e => setError(e.message));
-    fetch('/api/reporting/dashboard/revenue-by-category')
+    fetch('/api/reporting/dashboard/revenue-by-category', { headers: authHeaders() })
       .then(r => {
         if (!r.ok) throw new Error(`revenue-by-category ${r.status}`);
         return r.json();
       })
       .then(setRevenueByCategory)
       .catch(e => setError(e.message));
-    fetch('/api/reporting/dashboard/revenue-by-payment')
+    fetch('/api/reporting/dashboard/revenue-by-payment', { headers: authHeaders() })
       .then(r => {
         if (!r.ok) throw new Error(`revenue-by-payment ${r.status}`);
         return r.json();
       })
       .then(setRevenueByPayment)
       .catch(e => setError(e.message));
-  }, []);
+  }, [loading, token]);
 
   useEffect(() => {
-    fetch('/api/reporting/uploads')
-      .then(r => {
-        if (!r.ok) throw new Error(`uploads ${r.status}`);
-        return r.json();
-      })
-      .then(setUploads)
-      .catch(e => setError(e.message));
-  }, []);
+    if (loading || !token) return;
+      fetch('/api/reporting/uploads', { headers: authHeaders() })
+        .then(r => {
+          if (!r.ok) throw new Error(`uploads ${r.status}`);
+          return r.json();
+        })
+        .then(setUploads)
+        .catch(e => setError(e.message));
+  }, [loading, token]);
 
   // export helpers
   const exportData = (data, filename) => {
@@ -148,11 +156,11 @@ export default function Reports() {
       alert('Please provide a name and select a file');
       return;
     }
-    fetch('/api/reporting/upload', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: uploadName, payload: uploadPreview }),
-    })
+      fetch('/api/reporting/upload', {
+        method: 'POST',
+        headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders()),
+        body: JSON.stringify({ name: uploadName, payload: uploadPreview }),
+      })
       .then(r => r.json())
       .then(res => {
         alert('Upload saved (id ' + res.id + ')');
@@ -161,6 +169,21 @@ export default function Reports() {
       })
       .catch(err => console.error('upload error', err));
   };
+
+    function authHeaders() {
+      return token ? { Authorization: 'Bearer ' + token } : {};
+    }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading reports...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (error) {
     return (

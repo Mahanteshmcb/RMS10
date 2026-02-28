@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react';
+import { useAuth, hasPermission } from '../../hooks/useAuth';
 
 export default function Units() {
+  const { token, user } = useAuth();
+  const role = user?.role || 'guest';
+  const canManage = hasPermission(role, ['owner','manager']);
   const [units, setUnits] = useState([]);
   const [name, setName] = useState('');
   const [abbr, setAbbr] = useState('');
@@ -8,39 +12,51 @@ export default function Units() {
   const [editName, setEditName] = useState('');
   const [editAbbr, setEditAbbr] = useState('');
 
+  const authHeaders = () => token ? { Authorization: `Bearer ${token}` } : {};
+
   useEffect(() => {
-    fetch('/api/inventory/units').then(r => r.json()).then(setUnits);
-  }, []);
+    if (!token) return;
+    fetch('/api/inventory/units', { headers: authHeaders() })
+      .then(r => r.ok ? r.json() : Promise.reject(new Error(`${r.status}`)))
+      .then(setUnits)
+      .catch(e => console.error('Error fetching units:', e));
+  }, [token]);
 
   function add() {
     if (!name.trim()) return alert('Name required');
     fetch('/api/inventory/units', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
       body: JSON.stringify({ name, abbreviation: abbr }),
     })
-      .then(r => r.json())
-      .then(u => setUnits(prev => [...prev, u]));
+      .then(r => r.ok ? r.json() : Promise.reject(new Error(`${r.status}`)))
+      .then(u => setUnits(prev => [...prev, u]))
+      .catch(e => console.error('Error adding unit:', e));
     setName('');
     setAbbr('');
   }
 
   function remove(id) {
-    fetch(`/api/inventory/units/${id}`, { method: 'DELETE' }).then(() =>
-      setUnits(prev => prev.filter(u => u.id !== id))
-    );
+    fetch(`/api/inventory/units/${id}`, { 
+      method: 'DELETE',
+      headers: authHeaders()
+    })
+      .then(r => r.ok ? Promise.resolve() : Promise.reject(new Error(`${r.status}`)))
+      .then(() => setUnits(prev => prev.filter(u => u.id !== id)))
+      .catch(e => console.error('Error deleting unit:', e));
   }
 
   function update(id, newName, newAbbr) {
     fetch(`/api/inventory/units/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
       body: JSON.stringify({ name: newName, abbreviation: newAbbr }),
     })
-      .then(r => r.json())
+      .then(r => r.ok ? r.json() : Promise.reject(new Error(`${r.status}`)))
       .then(updated =>
         setUnits(prev => prev.map(u => (u.id === id ? updated : u)))
-      );
+      )
+      .catch(e => console.error('Error updating unit:', e));
   }
 
   return (
@@ -99,47 +115,51 @@ export default function Units() {
                     </button>
                   </>
                 ) : (
-                  <>
-                    <button
-                      onClick={() => {
-                        setEditing(u.id);
-                        setEditName(u.name);
-                        setEditAbbr(u.abbreviation || '');
-                      }}
-                      className="text-blue-500 text-sm"
-                    >
-                      edit
-                    </button>
-                    <button
-                      onClick={() => remove(u.id)}
-                      className="text-red-500 text-sm"
-                    >
-                      delete
-                    </button>
-                  </>
+                  canManage && (
+                    <>
+                      <button
+                        onClick={() => {
+                          setEditing(u.id);
+                          setEditName(u.name);
+                          setEditAbbr(u.abbreviation || '');
+                        }}
+                        className="text-blue-500 text-sm"
+                      >
+                        edit
+                      </button>
+                      <button
+                        onClick={() => remove(u.id)}
+                        className="text-red-500 text-sm"
+                      >
+                        delete
+                      </button>
+                    </>
+                  )
                 )}
               </td>
             </tr>
           ))}
         </tbody>
       </table>
-      <div className="space-x-2">
-        <input
-          placeholder="Name"
-          value={name}
-          onChange={e => setName(e.target.value)}
-          className="border p-1"
-        />
-        <input
-          placeholder="Abbreviation"
-          value={abbr}
-          onChange={e => setAbbr(e.target.value)}
-          className="border p-1"
-        />
-        <button onClick={add} className="px-2 py-1 bg-green-500 text-white">
-          Add
-        </button>
-      </div>
+      {canManage && (
+        <div className="space-x-2">
+          <input
+            placeholder="Name"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            className="border p-1"
+          />
+          <input
+            placeholder="Abbreviation"
+            value={abbr}
+            onChange={e => setAbbr(e.target.value)}
+            className="border p-1"
+          />
+          <button onClick={add} className="px-2 py-1 bg-green-500 text-white">
+            Add
+          </button>
+        </div>
+      )}
     </div>
   );
 }

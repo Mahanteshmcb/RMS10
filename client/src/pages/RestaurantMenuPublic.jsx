@@ -31,7 +31,10 @@ export default function RestaurantMenuPublic() {
   const fetchRestaurantMenu = async () => {
     try {
       const response = await fetch(`/api/public/restaurants/${slug}`);
-      if (!response.ok) throw new Error('Restaurant not found');
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || 'Restaurant not found');
+      }
       const data = await response.json();
       setRestaurant(data.restaurant);
       setCategories(data.categories || []);
@@ -194,6 +197,9 @@ export default function RestaurantMenuPublic() {
                         <h3 className="font-bold text-lg">{item.name}</h3>
                         <span className="text-lg font-bold text-blue-600">₹{item.price}</span>
                       </div>
+                      {item.image_url && (
+                        <img src={item.image_url} alt={item.name} className="w-full h-40 object-cover mb-2" />
+                      )}
                       {item.description && (
                         <p className="text-sm text-gray-600 mb-4">{item.description}</p>
                       )}

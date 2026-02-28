@@ -7,18 +7,24 @@ const db = require('../config/db');
 const bcrypt = require('bcrypt');
 const { makeSlug } = require('../utils/slug');
 
-async function ensureSlugColumn() {
+async function ensureDbMigrations() {
   try {
-    // Check if slug column exists, if not add it
+    // Slug column
     await db.query(`
-      ALTER TABLE restaurants ADD COLUMN slug TEXT UNIQUE;
+      ALTER TABLE restaurants ADD COLUMN IF NOT EXISTS slug TEXT UNIQUE;
     `);
-    console.log('⚠️  Added slug column to restaurants table');
+    console.log('⚠️  Ensured slug column on restaurants');
   } catch (err) {
-    // Column likely already exists
-    if (!err.message.includes('already exists')) {
-      console.warn('Migration check:', err.message);
-    }
+    console.warn('Migration slug check:', err.message);
+  }
+  try {
+    // image_url on menu_items
+    await db.query(`
+      ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS image_url TEXT;
+    `);
+    console.log('⚠️  Ensured image_url column on menu_items');
+  } catch (err) {
+    console.warn('Migration image_url check:', err.message);
   }
 }
 
@@ -28,7 +34,7 @@ async function main() {
 
     // Ensure schema is up-to-date
     console.log('🔄 Checking schema...');
-    await ensureSlugColumn();
+    await ensureDbMigrations();
     console.log();
 
     // clear previous data to allow reruns

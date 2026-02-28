@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useContext } from 'react';
+import AuthContext from '../../context/AuthContext';
 
 export default function Recipes() {
+  const { token } = useContext(AuthContext);
   const [recipes, setRecipes] = useState([]);
   const [menuItemId, setMenuItemId] = useState('');
   const [materialId, setMaterialId] = useState('');
@@ -14,21 +16,25 @@ export default function Recipes() {
   const [editAmount, setEditAmount] = useState('');
   const [editUnit, setEditUnit] = useState('');
 
+  const authHeaders = () => token ? { Authorization: `Bearer ${token}` } : {};
+
   useEffect(() => {
-    fetch('/api/inventory/recipes').then(r => r.json()).then(setRecipes);
-    fetch('/api/inventory/materials').then(r => r.json()).then(setMaterials);
-    fetch('/api/inventory/units').then(r => r.json()).then(setUnits);
-  }, []);
+    if (!token) return;
+    fetch('/api/inventory/recipes', { headers: authHeaders() }).then(r => r.ok ? r.json() : Promise.reject(new Error(`${r.status}`))).then(setRecipes).catch(e => console.error('Error fetching recipes:', e));
+    fetch('/api/inventory/materials', { headers: authHeaders() }).then(r => r.ok ? r.json() : Promise.reject(new Error(`${r.status}`))).then(setMaterials).catch(e => console.error('Error fetching materials:', e));
+    fetch('/api/inventory/units', { headers: authHeaders() }).then(r => r.ok ? r.json() : Promise.reject(new Error(`${r.status}`))).then(setUnits).catch(e => console.error('Error fetching units:', e));
+  }, [token]);
 
   function add() {
     if (!menuItemId || !materialId || !amount) return alert('All fields required');
     fetch('/api/inventory/recipes', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
       body: JSON.stringify({ menu_item_id: menuItemId, raw_material_id: materialId, amount, unit_id: unitId }),
     })
-      .then(r => r.json())
-      .then(rp => setRecipes(prev => [...prev, rp]));
+      .then(r => r.ok ? r.json() : Promise.reject(new Error(`${r.status}`)))
+      .then(rp => setRecipes(prev => [...prev, rp]))
+      .catch(e => console.error('Error adding recipe:', e));
     setMenuItemId('');
     setMaterialId('');
     setAmount('');
@@ -36,9 +42,9 @@ export default function Recipes() {
   }
 
   function remove(id) {
-    fetch(`/api/inventory/recipes/${id}`, { method: 'DELETE' }).then(() =>
+    fetch(`/api/inventory/recipes/${id}`, { method: 'DELETE', headers: authHeaders() }).then(() =>
       setRecipes(prev => prev.filter(rp => rp.id !== id))
-    );
+    ).catch(e => console.error('Error deleting recipe:', e));
   }
 
   function update(id) {
@@ -49,13 +55,14 @@ export default function Recipes() {
     if (n !== null && m !== null && a !== null) {
       fetch(`/api/inventory/recipes/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
         body: JSON.stringify({ menu_item_id: n, raw_material_id: m, amount: a, unit_id: u }),
       })
-        .then(r => r.json())
+        .then(r => r.ok ? r.json() : Promise.reject(new Error(`${r.status}`)))
         .then(updated =>
           setRecipes(prev => prev.map(rp => (rp.id === id ? updated : rp)))
-        );
+        )
+        .catch(e => console.error('Error updating recipe:', e));
     }
   }
 

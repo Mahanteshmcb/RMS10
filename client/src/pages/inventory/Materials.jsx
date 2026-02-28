@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react';
+import { useAuth, hasPermission } from '../../hooks/useAuth';
 
 export default function Materials() {
+  const { token, user } = useAuth();
+  const role = user?.role || 'guest';
+  const canManage = hasPermission(role, ['owner','manager']);
   const [materials, setMaterials] = useState([]);
   const [name, setName] = useState('');
   const [unitId, setUnitId] = useState('');
@@ -9,40 +13,45 @@ export default function Materials() {
   const [editName, setEditName] = useState('');
   const [editUnit, setEditUnit] = useState('');
 
+  const authHeaders = () => token ? { Authorization: `Bearer ${token}` } : {};
+
   useEffect(() => {
-    fetch('/api/inventory/materials').then(r => r.json()).then(setMaterials);
-    fetch('/api/inventory/units').then(r => r.json()).then(setUnits);
-  }, []);
+    if (!token) return;
+    fetch('/api/inventory/materials', { headers: authHeaders() }).then(r => r.ok ? r.json() : Promise.reject(new Error(`${r.status}`))).then(setMaterials).catch(e => console.error('Error fetching materials:', e));
+    fetch('/api/inventory/units', { headers: authHeaders() }).then(r => r.ok ? r.json() : Promise.reject(new Error(`${r.status}`))).then(setUnits).catch(e => console.error('Error fetching units:', e));
+  }, [token]);
 
   function add() {
     if (!name.trim()) return alert('Name required');
     fetch('/api/inventory/materials', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
       body: JSON.stringify({ name, unit_id: unitId }),
     })
-      .then(r => r.json())
-      .then(m => setMaterials(prev => [...prev, m]));
+      .then(r => r.ok ? r.json() : Promise.reject(new Error(`${r.status}`)))
+      .then(m => setMaterials(prev => [...prev, m]))
+      .catch(e => console.error('Error adding material:', e));
     setName('');
     setUnitId('');
   }
 
   function remove(id) {
-    fetch(`/api/inventory/materials/${id}`, { method: 'DELETE' }).then(() =>
+    fetch(`/api/inventory/materials/${id}`, { method: 'DELETE', headers: authHeaders() }).then(() =>
       setMaterials(prev => prev.filter(m => m.id !== id))
-    );
+    ).catch(e => console.error('Error deleting material:', e));
   }
 
   function update(id, newName, newUnit) {
     fetch(`/api/inventory/materials/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
       body: JSON.stringify({ name: newName, unit_id: newUnit }),
     })
-      .then(r => r.json())
+      .then(r => r.ok ? r.json() : Promise.reject(new Error(`${r.status}`)))
       .then(updated =>
         setMaterials(prev => prev.map(m => (m.id === id ? updated : m)))
-      );
+      )
+      .catch(e => console.error('Error updating material:', e));
   }
 
   return (
@@ -106,31 +115,34 @@ export default function Materials() {
                     </button>
                   </>
                 ) : (
-                  <>
-                    <button
-                      onClick={() => {
-                        setEditing(m.id);
-                        setEditName(m.name);
-                        setEditUnit(m.unit_id || '');
-                      }}
-                      className="text-blue-500 text-sm"
-                    >
-                      edit
-                    </button>
-                    <button
-                      onClick={() => remove(m.id)}
-                      className="text-red-500 text-sm"
-                    >
-                      delete
-                    </button>
-                  </>
+                  canManage && (
+                    <>
+                      <button
+                        onClick={() => {
+                          setEditing(m.id);
+                          setEditName(m.name);
+                          setEditUnit(m.unit_id || '');
+                        }}
+                        className="text-blue-500 text-sm"
+                      >
+                        edit
+                      </button>
+                      <button
+                        onClick={() => remove(m.id)}
+                        className="text-red-500 text-sm"
+                      >
+                        delete
+                      </button>
+                    </>
+                  )
                 )}
               </td>
             </tr>
           ))}
         </tbody>
       </table>
-      <div className="space-x-2">
+      {canManage && (
+        <div className="space-x-2">
         <input
           placeholder="Name"
           value={name}
@@ -153,6 +165,7 @@ export default function Materials() {
           Add
         </button>
       </div>
+      )}
     </div>
   );
 }

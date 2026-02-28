@@ -24,7 +24,8 @@ const Report = {
         `SELECT mi.name, SUM(oi.quantity) AS sold
            FROM order_items oi
            JOIN menu_items mi ON oi.menu_item_id = mi.id
-          WHERE oi.restaurant_id = $1
+           JOIN orders o ON oi.order_id = o.id
+          WHERE o.restaurant_id = $1
           GROUP BY mi.name
           ORDER BY sold DESC
           LIMIT $2`,
@@ -40,8 +41,9 @@ const Report = {
            FROM order_items oi
            JOIN menu_items mi ON oi.menu_item_id = mi.id
            JOIN categories c ON mi.category_id = c.id
-          WHERE oi.restaurant_id = $1
-            AND oi.created_at BETWEEN $2 AND $3
+           JOIN orders o ON oi.order_id = o.id
+          WHERE o.restaurant_id = $1
+            AND o.created_at BETWEEN $2 AND $3
           GROUP BY c.name
           ORDER BY total DESC`,
         [restaurantId, startDate, endDate]

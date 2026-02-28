@@ -3,16 +3,16 @@ import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth, useRole } from '../hooks/useAuth';
 
 export default function MainLayout() {
-  const { user, token, logout } = useAuth();
+  const { user, token, loading, logout } = useAuth();
   const role = useRole();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   useEffect(() => {
-    if (!token) {
+    if (!loading && !token) {
       navigate('/login');
     }
-  }, [token, navigate]);
+  }, [token, loading, navigate]);
 
   const handleLogout = () => {
     logout();
@@ -64,6 +64,17 @@ export default function MainLayout() {
   };
 
   const navigation = getNavigation();
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   const linkClass = ({ isActive }) =>
     `flex items-center px-4 py-3 rounded-lg transition ${

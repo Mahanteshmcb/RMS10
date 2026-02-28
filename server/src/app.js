@@ -8,6 +8,17 @@ const app = express();
 
 app.use(express.json());
 
+// ensure some optional columns exist (runtime migration)
+const db = require('./config/db');
+(async function ensureSchema() {
+  try {
+    await db.query('ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS image_url TEXT;');
+    // additional migrations can be added here
+  } catch (err) {
+    console.error('schema migration error', err.message);
+  }
+})();
+
 const { authMiddleware } = require('./core/auth/jwt');
 const { checkModule } = require('./core/middleware/featureFlagCheck');
 const tenantHandler = require('./core/middleware/tenantHandler');
