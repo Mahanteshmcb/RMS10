@@ -27,6 +27,7 @@ ChartJS.register(
 
 
 export default function Reports() {
+  const [error, setError] = useState(null);
   const [sales, setSales] = useState([]);
   const [topItems, setTopItems] = useState([]);
   const [start, setStart] = useState('');
@@ -53,8 +54,12 @@ export default function Reports() {
     if (start) params.append('start', start);
     if (end) params.append('end', end);
     fetch(`/api/reporting/sales?${params.toString()}`)
-      .then(r => r.json())
-      .then(setSales);
+      .then(r => {
+        if (!r.ok) throw new Error(`sales ${r.status}`);
+        return r.json();
+      })
+      .then(setSales)
+      .catch(e => setError(e.message));
   };
 
   const fetchTop = () => {
@@ -67,26 +72,43 @@ export default function Reports() {
     fetchSales();
     fetchTop();
     fetch('/api/reporting/dashboard/summary')
-      .then(r => r.json())
-      .then(setSummary);
+      .then(r => {
+        if (!r.ok) throw new Error(`dashboard summary ${r.status}`);
+        return r.json();
+      })
+      .then(setSummary)
+      .catch(e => setError(e.message));
     fetch('/api/reporting/dashboard/active-orders')
-      .then(r => r.json())
-      .then(setActive);
+      .then(r => {
+        if (!r.ok) throw new Error(`active-orders ${r.status}`);
+        return r.json();
+      })
+      .then(setActive)
+      .catch(e => setError(e.message));
     fetch('/api/reporting/dashboard/revenue-by-category')
-      .then(r => r.json())
+      .then(r => {
+        if (!r.ok) throw new Error(`revenue-by-category ${r.status}`);
+        return r.json();
+      })
       .then(setRevenueByCategory)
-      .catch(e => console.log('Category revenue fetch error:', e));
+      .catch(e => setError(e.message));
     fetch('/api/reporting/dashboard/revenue-by-payment')
-      .then(r => r.json())
+      .then(r => {
+        if (!r.ok) throw new Error(`revenue-by-payment ${r.status}`);
+        return r.json();
+      })
       .then(setRevenueByPayment)
-      .catch(e => console.log('Payment revenue fetch error:', e));
+      .catch(e => setError(e.message));
   }, []);
 
   useEffect(() => {
     fetch('/api/reporting/uploads')
-      .then(r => r.json())
+      .then(r => {
+        if (!r.ok) throw new Error(`uploads ${r.status}`);
+        return r.json();
+      })
       .then(setUploads)
-      .catch(e => console.log('uploads fetch err', e));
+      .catch(e => setError(e.message));
   }, []);
 
   // export helpers
@@ -139,6 +161,12 @@ export default function Reports() {
       })
       .catch(err => console.error('upload error', err));
   };
+
+  if (error) {
+    return (
+      <div className="p-6 text-red-600">Reports unavailable: {error}</div>
+    );
+  }
 
   return (
     <div>

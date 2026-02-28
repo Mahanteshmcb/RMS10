@@ -8,6 +8,25 @@ import PurchaseOrders from './PurchaseOrders';
 import LowStock from './LowStock';
 
 export default function Inventory() {
+  const [error, setError] = useState(null);
+
+  // quick check to surface permission errors or missing module
+  useEffect(() => {
+    fetch('/api/inventory/units')
+      .then(r => {
+        if (!r.ok) throw new Error(`Inventory API ${r.status}`);
+      })
+      .catch(e => setError(e.message));
+  }, []);
+
+  if (error) {
+    return (
+      <div className="p-6 text-red-600">
+        Inventory unavailable: {error}
+      </div>
+    );
+  }
+
   return (
     <div>
       <h1>Inventory Management</h1>
