@@ -2,7 +2,7 @@
 // Usage: node src/scripts/seedData.js
 
 // load .env before any database code
-require('dotenv').config();
+require('dotenv').config({ path: require('path').join(__dirname, '../../.env') });
 const db = require('../config/db');
 const bcrypt = require('bcrypt');
 const { makeSlug } = require('../utils/slug');

@@ -26,11 +26,13 @@ Refer to project planning documents for development phases and roadmap.
    > frontend server (`npm run dev`) so the proxy takes effect.
 
 2. **Start PostgreSQL with Docker Compose:**
-   ```bash
-   docker-compose up -d
-   ```
-   This will:
-   - Start PostgreSQL on port 5434
+  Start PostgreSQL with Docker Compose:
+  docker-compose up -d
+
+   - 💡 NOTE: PostgreSQL will run on port 5434. Ensure no local 
+   PostgreSQL service is already using this port. If you have 
+   Postgres installed on Windows, stop it via Services.msc 
+   or run 'Stop-Service -Name postgresql* -Force' in Admin PowerShell.
    - Automatically initialize the database schema
    - Create a volume for data persistence
 
@@ -89,10 +91,11 @@ Refer to project planning documents for development phases and roadmap.
    psql -U postgres -d rms -f server/db/init.sql
    psql -U postgres -d rms -f server/db/pos.sql
    psql -U postgres -d rms -f server/db/inventory.sql
+   psql -U postgres -d rms -f server/db/onboarding.sql
    ```
 4. Create `.env` file in `/server`:
    ```
-   DATABASE_URL=postgres://postgres:password@localhost:5432/rms
+   DATABASE_URL=postgres://user:password@localhost:5434/rms
    JWT_SECRET=your-secret-key-here
    PORT=3000
    ```
@@ -267,6 +270,26 @@ Follow these steps to clone the repo and run the full website locally.
    - Create a user via `/api/auth/register` or manually in the DB
    - Log in via Login page to receive JWT token
    - Proceed with Tables, Menu, Kitchen, Inventory, Reports testing
+
+
+## 🛠️ Troubleshooting
+
+### 1. "Password Authentication Failed"
+If Docker is up but you can't seed:
+- Check if your `.env` uses `user:password` and port `5434`.
+- If you previously used a different password, run `docker-compose down -v` to reset the volume.
+
+### 2. "Port 5434 already in use" (Windows)
+If you have a local Postgres installation, it may block Docker. 
+Run this in PowerShell as Administrator:
+```powershell
+Stop-Service -Name postgresql* -Force
+
+### 3. "Reports Unavailable" (500 Error)
+If the Reports page fails, ensure the onboarding.sql file was applied. You can manually push it to Docker:
+
+PowerShell
+Get-Content server/db/onboarding.sql | docker exec -i rms-postgres psql -U user -d rms
 
 ### Architecture Highlights
 
