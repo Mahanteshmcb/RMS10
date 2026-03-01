@@ -1,27 +1,44 @@
 const db = require('../../../config/db');
 
 async function create(restaurantId, tableId, items) {
-  // items: [{menu_item_id, variant_id, quantity, price}]
   return db.withTenant(restaurantId, async client => {
+    // 1. Create the base order
     const orderRes = await client.query(
       'INSERT INTO orders(restaurant_id, table_id, status, total) VALUES($1,$2,$3,$4) RETURNING *',
       [restaurantId, tableId, 'open', 0]
     );
     const orderId = orderRes.rows[0].id;
     let total = 0;
+
+    // 2. Process items
     for (const it of items) {
-      const linePrice = it.price * it.quantity;
+      // LOOKUP PRICE: Fetching from menu_items to ensure it's not null
+      const menuRes = await client.query(
+        'SELECT base_price FROM menu_items WHERE id = $1',
+        [it.menu_item_id]
+      );
+      
+      const price = menuRes.rows[0]?.base_price || 0;
+      const linePrice = price * it.quantity;
       total += linePrice;
+
       await client.query(
         `INSERT INTO order_items(order_id, menu_item_id, variant_id, quantity, price)
          VALUES($1,$2,$3,$4,$5)`,
-        [orderId, it.menu_item_id, it.variant_id, it.quantity, it.price]
+        [orderId, it.menu_item_id, it.variant_id || null, it.quantity, price]
       );
     }
-    await client.query('UPDATE orders SET total=$1 WHERE id=$2', [total, orderId]);
-    return { order: orderRes.rows[0], total };
+
+    // 3. Finalize total
+    const updatedOrder = await client.query(
+      'UPDATE orders SET total=$1 WHERE id=$2 RETURNING *', 
+      [total, orderId]
+    );
+    
+    return { order: updatedOrder.rows[0], total };
   });
 }
+
 
 async function get(restaurantId, orderId) {
   return db.withTenant(restaurantId, async client => {
@@ -45,19 +62,31 @@ async function updateStatus(restaurantId, orderId, status) {
 }
 
 async function addItem(restaurantId, orderId, item) {
-  // item: {menu_item_id, variant_id, quantity, price}
+  // item: {menu_item_id, variant_id, quantity}
   return db.withTenant(restaurantId, async client => {
-    const linePrice = item.price * item.quantity;
+    // 1. Fetch the official price from the database
+    const menuRes = await client.query(
+      'SELECT base_price FROM menu_items WHERE id = $1',
+      [item.menu_item_id]
+    );
+    
+    const price = menuRes.rows[0]?.base_price || 0;
+    const linePrice = price * item.quantity;
+
+    // 2. Insert the item with the verified price
     await client.query(
       `INSERT INTO order_items(order_id, menu_item_id, variant_id, quantity, price)
        VALUES($1,$2,$3,$4,$5)`,
-      [orderId, item.menu_item_id, item.variant_id, item.quantity, item.price]
+      [orderId, item.menu_item_id, item.variant_id || null, item.quantity, price]
     );
-    // update total
+
+    // 3. Update the running total of the order
     await client.query(
       `UPDATE orders SET total = total + $1 WHERE id=$2`,
       [linePrice, orderId]
     );
+    
+    return { orderId, addedPrice: linePrice };
   });
 }
 
@@ -75,4 +104,4 @@ async function pay(restaurantId, orderId, amountPaid) {
   });
 }
 
-module.exports = { create, get, list, updateStatus };
+module.exports = { create, get, list, updateStatus, addItem, pay };

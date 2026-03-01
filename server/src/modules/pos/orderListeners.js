@@ -23,17 +23,17 @@ eventBus.on('ORDER_CREATED', async ({ restaurantId, orderId, tableId, customerNa
         console.log(`Table ${table.name} marked occupied for order ${orderId}`);
         
         // Emit to KDS namespace with full order details
-        kds.emit('new_order', {
-          orderId,
-          restaurantId,
-          tableId,
-          tableName: table.name,
-          customerName,
-          items,
-          totalAmount,
-          orderType,
-          timestamp
-        });
+        kds.to(`restaurant_${restaurantId}`).emit('new_order', {
+        orderId,
+        restaurantId,
+        tableId,
+        tableName: table?.name || 'Takeaway',
+        customerName,
+        items, // Ensure items have names!
+        totalAmount,
+        orderType,
+        timestamp
+      });
         
         // Emit to waiter namespace for table updates
         waiter.emit('new_order', {

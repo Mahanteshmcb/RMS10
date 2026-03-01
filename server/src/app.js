@@ -71,7 +71,17 @@ io.on('connection', socket => {
 // kitchen namespace
 kds = io.of('/kds');
 kds.on('connection', socket => {
-  console.log('KDS client connected', socket.id);
+  // 1. Get restaurantId from the connection query
+  const { restaurantId } = socket.handshake.query;
+  
+  if (restaurantId) {
+    // 2. Join a room specific to this restaurant
+    socket.join(`restaurant_${restaurantId}`);
+    console.log(`KDS client connected for restaurant ${restaurantId}`, socket.id);
+  } else {
+    console.log('KDS client connected without restaurantId', socket.id);
+  }
+
   socket.on('disconnect', () => console.log('KDS client disconnected', socket.id));
 });
 

@@ -10,14 +10,50 @@ export default function KDS() {
   // Connect to KDS namespace and initialize
   useEffect(() => {
     const token = localStorage.getItem('token');
+    // Get restaurantId from localStorage (set during login)
+    const restaurantId = localStorage.getItem('restaurantId') || 1; // Ensure this matches your login storage key 
+
+    // 1. Fetch initial orders from the API
+    fetch('http://localhost:3000/api/pos/kds/orders', { 
+    headers: { 
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+      }
+    })
+      .then(res => res.json())
+      .then(data => {
+        // Transform API data to match the KDS card format
+        const formattedOrders = data.reduce((acc, curr) => {
+          const existing = acc.find(o => o.orderId === curr.order_id);
+          const item = { name: curr.item_name, quantity: curr.quantity };
+          if (existing) {
+            existing.items.push(item);
+          } else {
+            acc.push({
+              orderId: curr.order_id,
+              tableName: curr.table_name,
+              items: [item],
+              startTime: new Date(curr.item_created).getTime(),
+              status: 'pending'
+            });
+          }
+          return acc;
+        }, []);
+        setOrders(formattedOrders);
+      })
+      .catch(err => console.error("Initial fetch failed:", err));
+
+    // 2. Connect to Socket with restaurantId query
     const newSocket = io('http://localhost:3000/kds', {
       auth: { token },
-      reconnection: true
+      query: { restaurantId: String(restaurantId) }, // This fixes the "connected without restaurantId" log
+      transports: ['websocket']
     });
 
-    newSocket.on('connect', () => console.log('Connected to KDS'));
+    newSocket.on('connect', () => console.log('Connected to KDS Room:', restaurantId));
+    
     newSocket.on('new_order', data => {
-      console.log('New order received:', data);
+      console.log('New order received via socket:', data);
       setOrders(prev => [{
         ...data,
         startTime: Date.now(),
@@ -26,12 +62,9 @@ export default function KDS() {
     });
 
     newSocket.on('disconnect', () => console.log('Disconnected from KDS'));
-
     setSocket(newSocket);
 
-    // Timer to update order ages
     const timer = setInterval(() => setNow(Date.now()), 1000);
-
     return () => {
       newSocket.disconnect();
       clearInterval(timer);
@@ -40,13 +73,12 @@ export default function KDS() {
 
   // Mark item as ready
   const markReady = (orderId) => {
-    fetch(`/api/pos/orders/${orderId}/status`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + localStorage.getItem('token')
-      },
-      body: JSON.stringify({ status: 'ready' })
+    fetch(`http://localhost:3000/api/pos/kds/items/${orderId}/ready`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + localStorage.getItem('token')
+      }
     })
       .then(r => {
         if (!r.ok) throw new Error('Failed to update');

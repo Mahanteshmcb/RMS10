@@ -117,11 +117,11 @@ router.post('/orders', async (req, res, next) => {
       }
     }
 
-    // Create order
+    // Create order - Change status to 'open' to match internal POS orders
     const orderResult = await client.query(
       `INSERT INTO orders(restaurant_id, table_id, customer_name, customer_phone, customer_email, 
                          order_type, delivery_address, payment_method, status, total_amount, created_at)
-       VALUES($1, $2, $3, $4, $5, $6, $7, $8, 'pending', $9, NOW())
+       VALUES($1, $2, $3, $4, $5, $6, $7, $8, 'open', $9, NOW())
        RETURNING id`,
       [restaurantId, table_id || null, customer_name, customer_phone, customer_email || null, 
        order_type, delivery_address || null, payment_method, total_amount]
@@ -129,12 +129,19 @@ router.post('/orders', async (req, res, next) => {
 
     const orderId = orderResult.rows[0].id;
 
-    // Add order items
+    // Add order items - Explicitly set status to 'pending'
     for (const item of items) {
+      const itemData = await client.query(
+        'SELECT base_price FROM menu_items WHERE id = $1',
+        [item.item_id]
+      );
+
+      const price = itemData.rows[0]?.base_price || 0;
+
       await client.query(
-        `INSERT INTO order_items(order_id, menu_item_id, quantity)
-         VALUES($1, $2, $3)`,
-        [orderId, item.item_id, item.quantity]
+        `INSERT INTO order_items(order_id, menu_item_id, quantity, price, status)
+         VALUES($1, $2, $3, $4, 'pending')`,
+        [orderId, item.item_id, item.quantity, price]
       );
     }
 

@@ -23,13 +23,27 @@ async function get(req, res, next) {
 
 async function create(req, res, next) {
   try {
-    const { tableId, items } = req.body;
+    // 1. Extract with a default empty array
+    const { tableId, items = [] } = req.body;
+
+    // 2. Validate that items is actually an array
+    if (!Array.isArray(items)) {
+      return res.status(400).json({ error: 'Order items must be an array' });
+    }
+
+    // 3. Proceed with creation
     const { order, total } = await Order.create(req.restaurantId, tableId, items);
-    // emit order created event for internal listeners
-    eventBus.emit('ORDER_CREATED', { restaurantId: req.restaurantId, orderId: order.id, items });
-    // return created order
+
+    // 4. Emit event (only if creation was successful)
+    eventBus.emit('ORDER_CREATED', { 
+      restaurantId: req.restaurantId, 
+      orderId: order.id, 
+      items 
+    });
+
     res.status(201).json({ order, total });
   } catch (err) {
+    console.error('Create Order Error:', err.message);
     next(err);
   }
 }

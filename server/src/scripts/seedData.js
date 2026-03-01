@@ -55,6 +55,14 @@ async function main() {
     const restaurantId = restaurantRes.rows[0].id;
     console.log(`✅ Created restaurant ID: ${restaurantId} (slug: ${slug})\n`);
 
+    // Add default payment methods
+    console.log('💳 Creating payment methods...');
+    await db.query(
+      `INSERT INTO payment_methods (restaurant_id, method, enabled) 
+       VALUES ($1, 'Cash', true), ($1, 'Card', true), ($1, 'UPI', true)`,
+      [restaurantId]
+    );
+    
     // 2. Enable modules for restaurant
     console.log('🔧 Enabling modules...');
     const modules = ['pos', 'inventory', 'kds', 'reporting'];
