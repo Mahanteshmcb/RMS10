@@ -35,8 +35,8 @@ eventBus.on('ORDER_CREATED', async ({ restaurantId, orderId, tableId, customerNa
         timestamp
       });
         
-        // Emit to waiter namespace for table updates
-        waiter.emit('new_order', {
+        // Emit to waiter namespace for table updates (room-restricted)
+        waiter.to(`restaurant_${restaurantId}`).emit('new_order', {
           orderId,
           restaurantId,
           tableId,
@@ -54,7 +54,17 @@ eventBus.on('ORDER_CREATED', async ({ restaurantId, orderId, tableId, customerNa
       }
     } else {
       // For delivery/takeout orders without table, just notify kitchen
-      kds.emit('new_order', {
+      kds.to(`restaurant_${restaurantId}`).emit('new_order', {
+        orderId,
+        restaurantId,
+        customerName,
+        items,
+        totalAmount,
+        orderType,
+        timestamp
+      });
+      // also notify waiters in case they need to track takeout/delivery
+      waiter.to(`restaurant_${restaurantId}`).emit('new_order', {
         orderId,
         restaurantId,
         customerName,
@@ -113,6 +123,18 @@ eventBus.on('ORDER_PAID', async ({ restaurantId, orderId }) => {
     }
   } catch (err) {
     console.error('Error in ORDER_PAID listener:', err);
+  }
+});
+
+// when all items are ready and order transitions to ready_for_service
+
+eventBus.on('ORDER_READY', ({ restaurantId, orderId }) => {
+  try {
+    // send to waiter namespace room so only relevant clients receive it
+    const { waiter } = require('../../app');
+    waiter.to(`restaurant_${restaurantId}`).emit('order_ready', { restaurantId, orderId });
+  } catch (err) {
+    console.error('Broadcast ORDER_READY failed', err);
   }
 });
 

@@ -43,6 +43,10 @@ export function AuthProvider({ children }) {
     setUser(user);
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(user));
+    // also save restaurantId separately for convenience
+    if (user && user.restaurantId) {
+      localStorage.setItem('restaurantId', user.restaurantId);
+    }
     fetchRestaurantInfo(token);
   };
 
@@ -52,6 +56,7 @@ export function AuthProvider({ children }) {
     setRestaurantInfo(null);
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('restaurantId');
   };
 
   return (

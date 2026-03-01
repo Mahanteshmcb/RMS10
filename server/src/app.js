@@ -88,7 +88,13 @@ kds.on('connection', socket => {
 // waiter namespace
 waiter = io.of('/waiter');
 waiter.on('connection', socket => {
-  console.log('Waiter client connected', socket.id);
+  const { restaurantId } = socket.handshake.query;
+  if (restaurantId) {
+    socket.join(`restaurant_${restaurantId}`);
+    console.log(`Waiter client connected for restaurant ${restaurantId}`, socket.id);
+  } else {
+    console.log('Waiter client connected without restaurantId', socket.id);
+  }
   socket.on('disconnect', () => console.log('Waiter client disconnected', socket.id));
 });
 

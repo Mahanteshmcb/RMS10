@@ -11,21 +11,37 @@ export default function KDS() {
   useEffect(() => {
     const token = localStorage.getItem('token');
     // Get restaurantId from localStorage (set during login)
-    const restaurantId = localStorage.getItem('restaurantId') || 1; // Ensure this matches your login storage key 
+    let restaurantId = localStorage.getItem('restaurantId');
+    if (!restaurantId) {
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        try {
+          restaurantId = JSON.parse(storedUser).restaurantId;
+        } catch {}
+      }
+    }
+    restaurantId = restaurantId || 1; // fallback to 1 for dev
+
+    // helper to include auth and tenant headers
+    const buildHeaders = () => {
+      const h = { 'Content-Type': 'application/json' };
+      const t = localStorage.getItem('token');
+      if (t) h.Authorization = 'Bearer ' + t;
+      const rid = localStorage.getItem('restaurantId');
+      if (rid) h['x-restaurant-id'] = rid;
+      return h;
+    };
 
     // 1. Fetch initial orders from the API
     fetch('http://localhost:3000/api/pos/kds/orders', { 
-    headers: { 
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-      }
+      headers: buildHeaders()
     })
       .then(res => res.json())
       .then(data => {
         // Transform API data to match the KDS card format
         const formattedOrders = data.reduce((acc, curr) => {
           const existing = acc.find(o => o.orderId === curr.order_id);
-          const item = { name: curr.item_name, quantity: curr.quantity };
+          const item = { name: curr.item_name, quantity: curr.quantity, id: curr.item_id };
           if (existing) {
             existing.items.push(item);
           } else {
@@ -34,7 +50,7 @@ export default function KDS() {
               tableName: curr.table_name,
               items: [item],
               startTime: new Date(curr.item_created).getTime(),
-              status: 'pending'
+              status: curr.item_status || 'pending'
             });
           }
           return acc;
@@ -61,6 +77,12 @@ export default function KDS() {
       }, ...prev]);
     });
 
+    newSocket.on('order_ready', data => {
+      console.log('Order marked ready:', data);
+      setOrders(prev => prev.map(o =>
+        o.orderId === data.orderId ? { ...o, status: 'ready' } : o
+      ));
+    });
     newSocket.on('disconnect', () => console.log('Disconnected from KDS'));
     setSocket(newSocket);
 
@@ -72,22 +94,40 @@ export default function KDS() {
   }, []);
 
   // Mark item as ready
-  const markReady = (orderId) => {
-    fetch(`http://localhost:3000/api/pos/kds/items/${orderId}/ready`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + localStorage.getItem('token')
-      }
+  const markReady = (itemId) => {
+    fetch(`http://localhost:3000/api/pos/kds/items/${itemId}/ready`, {
+      method: 'POST',
+      headers: buildHeaders()
     })
       .then(r => {
         if (!r.ok) throw new Error('Failed to update');
         return r.json();
       })
       .then(() => {
-        setOrders(prev =>
-          prev.map(o => o.orderId === orderId ? { ...o, status: 'ready' } : o)
-        );
+        // find the order containing this item and update its status when all items marked
+        fetch('http://localhost:3000/api/pos/kds/orders', {
+          headers: buildHeaders()
+        })
+          .then(r => r.json())
+          .then(data => {
+            const formattedOrders = data.reduce((acc, curr) => {
+              const existing = acc.find(o => o.orderId === curr.order_id);
+              const item = { name: curr.item_name, quantity: curr.quantity, id: curr.item_id };
+              if (existing) {
+                existing.items.push(item);
+              } else {
+                acc.push({
+                  orderId: curr.order_id,
+                  tableName: curr.table_name,
+                  items: [item],
+                  startTime: new Date(curr.item_created).getTime(),
+                  status: curr.item_status || 'pending'
+                });
+              }
+              return acc;
+            }, []);
+            setOrders(formattedOrders);
+          });
       })
       .catch(err => alert('Error: ' + err.message));
   };

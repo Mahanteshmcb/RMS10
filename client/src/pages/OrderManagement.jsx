@@ -16,12 +16,14 @@ export default function OrderManagement() {
     customer_email: '',
     delivery_address: ''
   });
+  const [menuItems, setMenuItems] = useState([]);
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [paymentMethods, setPaymentMethods] = useState([]);
 
   useEffect(() => {
     fetchOrders();
     fetchTables();
+    fetchMenuItems();
     fetchPaymentMethods();
   }, []);
 
@@ -51,6 +53,19 @@ export default function OrderManagement() {
     }
   };
 
+  const fetchMenuItems = async () => {
+    try {
+      const res = await fetch('/api/pos/menu-items', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Failed to load menu');
+      const items = await res.json();
+      setMenuItems(items);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const fetchPaymentMethods = async () => {
     try {
       if (!restaurantInfo?.slug) return;
@@ -74,6 +89,10 @@ export default function OrderManagement() {
       alert('Please enter delivery address');
       return;
     }
+    if (cart.length === 0) {
+      alert('Please add at least one item to the cart');
+      return;
+    }
 
     try {
       const response = await fetch('/api/pos/orders', {
@@ -90,8 +109,10 @@ export default function OrderManagement() {
           order_type: orderType,
           delivery_address: customerInfo.delivery_address,
           payment_method: paymentMethod,
-          status: 'pending',
-          total_amount: cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
+          // backend will assign open status and compute total itself, but supply amount too
+          status: 'open',
+          total_amount: cart.reduce((sum, item) => sum + item.price * item.quantity, 0),
+          items: cart.map(c => ({ menu_item_id: c.id, quantity: c.quantity }))
         })
       });
 
@@ -106,6 +127,22 @@ export default function OrderManagement() {
       fetchOrders();
     } catch (err) {
       alert('Error: ' + err.message);
+    }
+  };
+
+  const [timelineOrder, setTimelineOrder] = useState(null);
+  const [timelineData, setTimelineData] = useState([]);
+
+  const fetchTimeline = async (orderId) => {
+    try {
+      const res = await fetch(`/api/pos/orders/${orderId}/timeline`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Failed to fetch timeline');
+      setTimelineData(await res.json());
+      setTimelineOrder(orderId);
+    } catch (e) {
+      console.error(e);
     }
   };
 
@@ -168,6 +205,64 @@ export default function OrderManagement() {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Menu items and cart */}
+          <div className="mb-6">
+            <h3 className="font-semibold mb-2">Add Items</h3>
+            {menuItems.length === 0 ? (
+              <p className="text-sm text-gray-500">No menu items available</p>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {menuItems.map(item => (
+                  <div key={item.id} className="border p-2 rounded">
+                    <div className="font-semibold">{item.name}</div>
+                    <div className="text-xs text-gray-600">₹{item.base_price}</div>
+                    <button
+                      onClick={() => {
+                        const existing = cart.find(c => c.id === item.id);
+                        if (existing) {
+                          setCart(cart.map(c => c.id === item.id ? { ...c, quantity: c.quantity + 1 } : c));
+                        } else {
+                          setCart([...cart, { ...item, quantity: 1 }]);
+                        }
+                      }}
+                      className="mt-2 bg-green-600 text-white px-2 py-1 rounded text-sm"
+                    >
+                      + Add
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {cart.length > 0 && (
+              <div className="mt-4">
+                <h4 className="font-semibold mb-1">Cart</h4>
+                <ul className="space-y-1">
+                  {cart.map(c => (
+                    <li key={c.id} className="flex justify-between items-center">
+                      <span>{c.quantity}x {c.name}</span>
+                      <div>
+                        <button
+                          onClick={() => setCart(cart.filter(x => x.id !== c.id))}
+                          className="text-red-500 text-xs mr-2"
+                        >Remove</button>
+                        <input
+                          type="number"
+                          value={c.quantity}
+                          min="1"
+                          className="w-12 text-sm border rounded px-1"
+                          onChange={e => {
+                            const q = parseInt(e.target.value, 10) || 1;
+                            setCart(cart.map(x => x.id === c.id ? { ...x, quantity: q } : x));
+                          }}
+                        />
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
 
           {/* Dine-in: Table Selection */}
@@ -300,13 +395,56 @@ export default function OrderManagement() {
                       </span>
                     </td>
                     <td className="px-6 py-3">
-                      <span className={`inline-block px-3 py-1 rounded text-sm font-semibold ${
-                        order.status === 'completed' ? 'bg-green-100 text-green-800' :
-                        order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-red-100 text-red-800'
-                      }`}>
-                        {order.status}
-                      </span>
+                      <select
+                        value={order.status}
+                        onChange={async e => {
+                          const newStatus = e.target.value;
+                          try {
+                            if (newStatus === 'paid') {
+                              const paidStr = prompt('Amount paid?');
+                              const amountPaid = parseFloat(paidStr);
+                              if (isNaN(amountPaid)) {
+                                alert('Invalid amount');
+                                return;
+                              }
+                              const resp = await fetch(`/api/pos/orders/${order.id}/pay`, {
+                                method: 'POST',
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                  Authorization: `Bearer ${token}`
+                                },
+                                body: JSON.stringify({ amountPaid })
+                              });
+                              if (!resp.ok) throw new Error('Payment failed');
+                            } else {
+                              const resp = await fetch(`/api/pos/orders/${order.id}/status`, {
+                                method: 'PUT',
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                  Authorization: `Bearer ${token}`
+                                },
+                                body: JSON.stringify({ status: newStatus })
+                              });
+                              if (!resp.ok) throw new Error('Update failed');
+                            }
+                            fetchOrders();
+                          } catch (err) {
+                            alert('Failed to change status: ' + err.message);
+                          }
+                        }}
+                        className="px-2 py-1 border rounded"
+                      >
+                        {['open','preparing','ready_for_service','served','eating','billed','paid','cancelled']
+                          .map(s => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    </td>
+                    <td className="px-6 py-3">
+                      <button
+                        onClick={() => fetchTimeline(order.id)}
+                        className="text-blue-600 underline"
+                      >
+                        View timeline
+                      </button>
                     </td>
                     <td className="px-6 py-3 text-right font-bold">₹{order.total_amount?.toLocaleString()}</td>
                     <td className="px-6 py-3">
@@ -322,6 +460,30 @@ export default function OrderManagement() {
           </div>
         )}
       </div>
+
+      {/* timeline modal */}
+      {timelineOrder && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg max-w-lg w-full">
+            <h2 className="text-xl font-semibold mb-4">Order #{timelineOrder} Timeline</h2>
+            <ul className="space-y-2 mb-4">
+              {timelineData.map((t, idx) => (
+                <li key={idx} className="border-b pb-1">
+                  <div className="text-sm font-semibold">{t.status}</div>
+                  <div className="text-xs text-gray-600">{new Date(t.timestamp).toLocaleString()}</div>
+                  {t.notes && <div className="text-xs">{t.notes}</div>}
+                </li>
+              ))}
+            </ul>
+            <button
+              onClick={() => setTimelineOrder(null)}
+              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

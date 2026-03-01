@@ -16,7 +16,12 @@ export default function Recipes() {
   const [editAmount, setEditAmount] = useState('');
   const [editUnit, setEditUnit] = useState('');
 
-  const authHeaders = () => token ? { Authorization: `Bearer ${token}` } : {};
+  const authHeaders = () => {
+    const h = token ? { Authorization: `Bearer ${token}` } : {};
+    const rid = localStorage.getItem('restaurantId');
+    if (rid) h['x-restaurant-id'] = rid;
+    return h;
+  };
 
   useEffect(() => {
     if (!token) return;

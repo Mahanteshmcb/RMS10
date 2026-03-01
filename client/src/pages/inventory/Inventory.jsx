@@ -14,7 +14,10 @@ export default function Inventory() {
   const [error, setError] = useState(null);
 
   const authHeaders = () => {
-    return token ? { Authorization: 'Bearer ' + token } : {};
+    const h = token ? { Authorization: 'Bearer ' + token } : {};
+    const rid = localStorage.getItem('restaurantId');
+    if (rid) h['x-restaurant-id'] = rid;
+    return h;
   };
 
   // quick check to surface permission errors or missing module

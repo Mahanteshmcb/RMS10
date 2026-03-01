@@ -59,7 +59,12 @@ export default function PurchaseOrders() {
   const [editVendor, setEditVendor] = useState('');
   const [editStatus, setEditStatus] = useState('pending');
 
-  const authHeaders = () => token ? { Authorization: `Bearer ${token}` } : {};
+  const authHeaders = () => {
+    const h = token ? { Authorization: `Bearer ${token}` } : {};
+    const rid = localStorage.getItem('restaurantId');
+    if (rid) h['x-restaurant-id'] = rid;
+    return h;
+  };
 
   useEffect(() => {
     if (!token) return;

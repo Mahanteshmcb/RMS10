@@ -13,7 +13,7 @@ function canPerform(role, action) {
   const permissions = {
     owner: ['*'],
     manager: ['*'],
-    chef: ['view_orders', 'update_status'],
+    chef: ['view_orders', 'update_status', 'manage_inventory'],
     waiter: ['create_orders', 'view_menu', 'view_reports'],
     cashier: ['create_bills', 'view_reports'],
   };
