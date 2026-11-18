@@ -1,3 +1,4 @@
+import { apiFetch } from '../lib/api.js';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { Link } from 'react-router-dom';
@@ -11,7 +12,7 @@ export default function Home() {
   useEffect(() => {
     if (!user) {
       setLoading(true);
-      fetch('/api/public/restaurants')
+      apiFetch('/api/public/restaurants')
         .then(r => r.json())
         .then(data => setRestaurants(data))
         .catch(err => setError(err.message))

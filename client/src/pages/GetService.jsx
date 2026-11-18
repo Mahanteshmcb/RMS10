@@ -1,3 +1,4 @@
+import { apiFetch } from '../lib/api.js';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -27,7 +28,7 @@ export default function GetService() {
     setSuccess(null);
 
     try {
-      const response = await fetch('/api/onboarding/request', {
+      const response = await apiFetch('/api/onboarding/request', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)

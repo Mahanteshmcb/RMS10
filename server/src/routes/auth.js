@@ -1,15 +1,19 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
-const { sign } = require('../core/auth/jwt');
+const { sign, authMiddleware } = require('../core/auth/jwt');
+const { requireSuperAdmin } = require('../core/auth/authorize');
 const db = require('../config/db');
 
 const router = express.Router();
 
 // register a new user under a restaurant
-router.post('/register', async (req, res, next) => {
+router.post('/register', authMiddleware, requireSuperAdmin, async (req, res, next) => {
   const { username, password, role, restaurantId } = req.body;
   if (!username || !password || !role || !restaurantId) {
     return res.status(400).json({ error: 'missing fields' });
+  }
+  if (!['owner', 'manager', 'chef', 'waiter', 'cashier'].includes(role)) {
+    return res.status(400).json({ error: 'invalid role' });
   }
   try {
     const hash = await bcrypt.hash(password, 10);

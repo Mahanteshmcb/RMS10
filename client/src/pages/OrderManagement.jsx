@@ -1,3 +1,4 @@
+import { apiFetch } from '../lib/api.js';
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 
@@ -29,7 +30,7 @@ export default function OrderManagement() {
 
   const fetchOrders = async () => {
     try {
-      const response = await fetch('/api/pos/orders', {
+      const response = await apiFetch('/api/pos/orders', {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!response.ok) throw new Error('Failed to fetch orders');
@@ -43,7 +44,7 @@ export default function OrderManagement() {
 
   const fetchTables = async () => {
     try {
-      const response = await fetch('/api/pos/tables', {
+      const response = await apiFetch('/api/pos/tables', {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!response.ok) throw new Error('Failed to fetch tables');
@@ -55,7 +56,7 @@ export default function OrderManagement() {
 
   const fetchMenuItems = async () => {
     try {
-      const res = await fetch('/api/pos/menu-items', {
+      const res = await apiFetch('/api/pos/menu-items', {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!res.ok) throw new Error('Failed to load menu');
@@ -70,7 +71,7 @@ export default function OrderManagement() {
     try {
       if (!restaurantInfo?.slug) return;
       // use public endpoint; slug identifies restaurant
-      const response = await fetch(`/api/public/payment-methods/${restaurantInfo.slug}`);
+      const response = await apiFetch(`/api/public/payment-methods/${restaurantInfo.slug}`);
       if (!response.ok) throw new Error('Failed to fetch payment methods');
       const methods = await response.json();
       // public endpoint returns rows with { method }
@@ -95,7 +96,7 @@ export default function OrderManagement() {
     }
 
     try {
-      const response = await fetch('/api/pos/orders', {
+      const response = await apiFetch('/api/pos/orders', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -135,7 +136,7 @@ export default function OrderManagement() {
 
   const fetchTimeline = async (orderId) => {
     try {
-      const res = await fetch(`/api/pos/orders/${orderId}/timeline`, {
+      const res = await apiFetch(`/api/pos/orders/${orderId}/timeline`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!res.ok) throw new Error('Failed to fetch timeline');
@@ -407,7 +408,7 @@ export default function OrderManagement() {
                                 alert('Invalid amount');
                                 return;
                               }
-                              const resp = await fetch(`/api/pos/orders/${order.id}/pay`, {
+                              const resp = await apiFetch(`/api/pos/orders/${order.id}/pay`, {
                                 method: 'POST',
                                 headers: {
                                   'Content-Type': 'application/json',
@@ -417,7 +418,7 @@ export default function OrderManagement() {
                               });
                               if (!resp.ok) throw new Error('Payment failed');
                             } else {
-                              const resp = await fetch(`/api/pos/orders/${order.id}/status`, {
+                              const resp = await apiFetch(`/api/pos/orders/${order.id}/status`, {
                                 method: 'PUT',
                                 headers: {
                                   'Content-Type': 'application/json',

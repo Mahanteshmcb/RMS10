@@ -10,4 +10,11 @@ function authorize(action) {
   };
 }
 
-module.exports = { authorize };
+function requireSuperAdmin(req, res, next) {
+  if (!req.user || req.user.role !== 'superadmin') {
+    return res.status(403).json({ error: 'Superadmin access required' });
+  }
+  next();
+}
+
+module.exports = { authorize, requireSuperAdmin };

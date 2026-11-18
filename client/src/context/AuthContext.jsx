@@ -1,3 +1,4 @@
+import { apiFetch } from '../lib/api.js';
 import { createContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext();
@@ -23,7 +24,7 @@ export function AuthProvider({ children }) {
 
   const fetchRestaurantInfo = async (authToken) => {
     try {
-      const res = await fetch('/api/pos/restaurant', {
+      const res = await apiFetch('/api/pos/restaurant', {
         headers: {
           'Authorization': `Bearer ${authToken}`,
           'x-restaurant-id': JSON.parse(localStorage.getItem('user')).restaurantId,

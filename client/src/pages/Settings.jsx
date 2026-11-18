@@ -1,3 +1,4 @@
+import { apiFetch } from '../lib/api.js';
 import { useState, useEffect } from 'react';
 
 export default function Settings() {
@@ -20,9 +21,9 @@ export default function Settings() {
     setLoading(true);
     setError(null);
     Promise.all([
-      fetch('/api/pos/restaurant', { headers: getHeaders() }).then(r => r.json()),
-      fetch('/api/modules', { headers: getHeaders() }).then(r => (r.ok ? r.json() : [])),
-      fetch('/api/pos/tables', { headers: getHeaders() }).then(r => r.json()),
+      apiFetch('/api/pos/restaurant', { headers: getHeaders() }).then(r => r.json()),
+      apiFetch('/api/modules', { headers: getHeaders() }).then(r => (r.ok ? r.json() : [])),
+      apiFetch('/api/pos/tables', { headers: getHeaders() }).then(r => r.json()),
     ])
       .then(([info, modulesData, tableData]) => {
         setRestaurantInfo(info);
@@ -46,7 +47,7 @@ export default function Settings() {
     const modKey = moduleName.toLowerCase();
     const current = modules.find(m => m.name === moduleName);
     const newEnabled = !current?.enabled;
-    fetch(`/api/modules/${modKey}`, {
+    apiFetch(`/api/modules/${modKey}`, {
       method: 'PATCH',
       headers: getHeaders(),
       body: JSON.stringify({ enabled: newEnabled }),
@@ -54,7 +55,7 @@ export default function Settings() {
   };
 
   const saveRestaurant = () => {
-    fetch('/api/pos/restaurant', {
+    apiFetch('/api/pos/restaurant', {
       method: 'PUT',
       headers: getHeaders(),
       body: JSON.stringify({ name: restaurantInfo.name, email: restaurantInfo.email }),
@@ -72,7 +73,7 @@ export default function Settings() {
 
   const removeTable = (id) => {
     if (!window.confirm('Delete table?')) return;
-    fetch(`/api/pos/tables/${id}`, { method: 'DELETE', headers: getHeaders() })
+    apiFetch(`/api/pos/tables/${id}`, { method: 'DELETE', headers: getHeaders() })
       .then(r => {
         if (!r.ok) throw new Error('Delete failed');
         setTables(prev => prev.filter(t => t.id !== id));
@@ -81,7 +82,7 @@ export default function Settings() {
   };
 
   const addTable = (name, seats = 1) => {
-    fetch('/api/pos/tables', {
+    apiFetch('/api/pos/tables', {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify({ name, seats }),

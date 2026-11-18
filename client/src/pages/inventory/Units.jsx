@@ -1,3 +1,4 @@
+import { apiFetch } from '../../lib/api.js';
 import { useEffect, useState } from 'react';
 import { useAuth, hasPermission } from '../../hooks/useAuth';
 
@@ -21,7 +22,7 @@ export default function Units() {
 
   useEffect(() => {
     if (!token) return;
-    fetch('/api/inventory/units', { headers: authHeaders() })
+    apiFetch('/api/inventory/units', { headers: authHeaders() })
       .then(r => r.ok ? r.json() : Promise.reject(new Error(`${r.status}`)))
       .then(setUnits)
       .catch(e => console.error('Error fetching units:', e));
@@ -29,7 +30,7 @@ export default function Units() {
 
   function add() {
     if (!name.trim()) return alert('Name required');
-    fetch('/api/inventory/units', {
+    apiFetch('/api/inventory/units', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
       body: JSON.stringify({ name, abbreviation: abbr }),
@@ -42,7 +43,7 @@ export default function Units() {
   }
 
   function remove(id) {
-    fetch(`/api/inventory/units/${id}`, { 
+    apiFetch(`/api/inventory/units/${id}`, {
       method: 'DELETE',
       headers: authHeaders()
     })
@@ -52,7 +53,7 @@ export default function Units() {
   }
 
   function update(id, newName, newAbbr) {
-    fetch(`/api/inventory/units/${id}`, {
+    apiFetch(`/api/inventory/units/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
       body: JSON.stringify({ name: newName, abbreviation: newAbbr }),

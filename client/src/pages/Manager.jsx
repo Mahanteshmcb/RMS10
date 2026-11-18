@@ -1,3 +1,4 @@
+import { apiFetch, socketBaseUrl } from '../lib/api.js';
 import { useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 
@@ -19,7 +20,7 @@ export default function Manager() {
     const token = localStorage.getItem('token');
     
     // Fetch initial orders
-    fetch('/api/pos/orders', {
+    apiFetch('/api/pos/orders', {
       headers: {
         'Authorization': 'Bearer ' + token
       }
@@ -36,7 +37,7 @@ export default function Manager() {
       .catch(err => console.error('Fetch error:', err));
 
     // Connect to socket for real-time updates
-    const newSocket = io('http://localhost:3000', {
+    const newSocket = io(socketBaseUrl, {
       auth: { token },
       reconnection: true
     });

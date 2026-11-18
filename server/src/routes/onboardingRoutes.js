@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../config/db');
 const { authMiddleware } = require('../core/auth/jwt');
+const { requireSuperAdmin } = require('../core/auth/authorize');
 const { makeSlug } = require('../utils/slug');
 
 const router = express.Router();
@@ -57,7 +58,7 @@ router.get('/request/status/:id', async (req, res, next) => {
 // ======================
 
 // List all pending requests
-router.get('/admin/requests', authMiddleware, async (req, res, next) => {
+router.get('/admin/requests', authMiddleware, requireSuperAdmin, async (req, res, next) => {
   try {
     const result = await db.query(
       `SELECT id, name, email, phone, address, city, owner_name, status, created_at 
@@ -72,7 +73,7 @@ router.get('/admin/requests', authMiddleware, async (req, res, next) => {
 });
 
 // Approve request and generate credentials
-router.post('/admin/request/:id/approve', authMiddleware, async (req, res, next) => {
+router.post('/admin/request/:id/approve', authMiddleware, requireSuperAdmin, async (req, res, next) => {
   const { id } = req.params;
   const client = await db.pool.connect();
 
@@ -141,7 +142,7 @@ router.post('/admin/request/:id/approve', authMiddleware, async (req, res, next)
 });
 
 // Reject request
-router.post('/admin/request/:id/reject', authMiddleware, async (req, res, next) => {
+router.post('/admin/request/:id/reject', authMiddleware, requireSuperAdmin, async (req, res, next) => {
   const { id } = req.params;
   const { reason } = req.body;
 

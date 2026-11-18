@@ -1,3 +1,4 @@
+import { apiFetch, socketBaseUrl } from '../lib/api.js';
 import { useEffect, useState } from 'react';
 import { io as socketIo } from 'socket.io-client';
 
@@ -34,7 +35,7 @@ export default function Kitchen() {
   const fetchOrders = () => {
     setLoading(true);
     setError(null);
-    fetch('/api/pos/kds/orders', { headers: buildHeaders() })
+    apiFetch('/api/pos/kds/orders', { headers: buildHeaders() })
       .then(r => {
         if (!r.ok) throw new Error('fetch failed');
         return r.json();
@@ -54,20 +55,8 @@ export default function Kitchen() {
     fetchOrders();
     // connect to kds namespace for real-time updates with restaurantId
     const token = localStorage.getItem('token');
-    let restaurantId = localStorage.getItem('restaurantId');
-    if (!restaurantId) {
-      const storedUser = localStorage.getItem('user');
-      if (storedUser) {
-        try {
-          restaurantId = JSON.parse(storedUser).restaurantId;
-        } catch {}
-      }
-    }
-    restaurantId = restaurantId || 1;
-
-    const socket = socketIo('http://localhost:3000/kds', {
-      auth: { token },
-      query: { restaurantId: String(restaurantId) }
+    const socket = socketIo(`${socketBaseUrl}/kds`, {
+      auth: { token }
     });
     socket.on('connect', () => console.log('Connected to KDS socket'));
     socket.on('new_order', () => {
@@ -82,7 +71,7 @@ export default function Kitchen() {
   }, []);
 
   const markReady = itemId => {
-    fetch(`/api/pos/kds/items/${itemId}/ready`, {
+    apiFetch(`/api/pos/kds/items/${itemId}/ready`, {
       method: 'POST',
       headers: buildHeaders(),
     })

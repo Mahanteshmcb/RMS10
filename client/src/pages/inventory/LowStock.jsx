@@ -1,3 +1,4 @@
+import { apiFetch, socketBaseUrl } from '../../lib/api.js';
 import { useEffect, useState, useContext } from 'react';
 import { io } from 'socket.io-client';
 import AuthContext from '../../context/AuthContext';
@@ -15,12 +16,14 @@ export default function LowStock() {
 
   useEffect(() => {
     if (!token) return;
-    fetch('/api/inventory/stock/low', { headers: authHeaders() })
+    apiFetch('/api/inventory/stock/low', { headers: authHeaders() })
       .then(r => r.ok ? r.json() : Promise.reject(new Error(`${r.status}`)))
       .then(setItems)
       .catch(e => console.error('Error fetching low stock:', e));
 
-    const socket = io('http://localhost:3000/inventory');
+    const socket = io(`${socketBaseUrl}/inventory`, {
+      auth: { token }
+    });
     socket.on('low_stock', data => {
       setItems(prev => {
         if (prev.find(i => i.raw_material_id === data.raw_material_id)) {

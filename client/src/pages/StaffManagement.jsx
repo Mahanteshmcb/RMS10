@@ -1,3 +1,4 @@
+import { apiFetch } from '../lib/api.js';
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 
@@ -23,7 +24,7 @@ export default function StaffManagement() {
 
   const fetchStaff = async () => {
     try {
-      const response = await fetch('/api/staff/staff', {
+      const response = await apiFetch('/api/staff/staff', {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!response.ok) throw new Error('Failed to fetch staff');
@@ -44,7 +45,7 @@ export default function StaffManagement() {
         ? `/api/staff/staff/${editingId}` 
         : '/api/staff/staff';
 
-      const response = await fetch(url, {
+      const response = await apiFetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
@@ -98,7 +99,7 @@ export default function StaffManagement() {
   const handleDelete = async (id) => {
     if (!window.confirm('Deactivate this staff member?')) return;
     try {
-      const response = await fetch(`/api/staff/staff/${id}`, {
+      const response = await apiFetch(`/api/staff/staff/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });

@@ -1,3 +1,4 @@
+import { apiFetch } from '../lib/api.js';
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 
@@ -28,7 +29,7 @@ export default function SalaryManagement() {
 
   const fetchStaff = async () => {
     try {
-      const response = await fetch('/api/staff/staff', {
+      const response = await apiFetch('/api/staff/staff', {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!response.ok) throw new Error('Failed to fetch staff');
@@ -47,7 +48,7 @@ export default function SalaryManagement() {
 
   const fetchSalaryRecords = async (staffId) => {
     try {
-      const response = await fetch(`/api/staff/staff/${staffId}/salary`, {
+      const response = await apiFetch(`/api/staff/staff/${staffId}/salary`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!response.ok) throw new Error('Failed to fetch salary records');
@@ -60,7 +61,7 @@ export default function SalaryManagement() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('/api/staff/salary', {
+      const response = await apiFetch('/api/staff/salary', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -94,7 +95,7 @@ export default function SalaryManagement() {
 
   const handleMarkPaid = async (recordId) => {
     try {
-      const response = await fetch(`/api/staff/salary/${recordId}/pay`, {
+      const response = await apiFetch(`/api/staff/salary/${recordId}/pay`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

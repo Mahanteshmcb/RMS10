@@ -1,3 +1,4 @@
+import { apiFetch, socketBaseUrl } from '../lib/api.js';
 import { useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 
@@ -10,18 +11,6 @@ export default function KDS() {
   // Connect to KDS namespace and initialize
   useEffect(() => {
     const token = localStorage.getItem('token');
-    // Get restaurantId from localStorage (set during login)
-    let restaurantId = localStorage.getItem('restaurantId');
-    if (!restaurantId) {
-      const storedUser = localStorage.getItem('user');
-      if (storedUser) {
-        try {
-          restaurantId = JSON.parse(storedUser).restaurantId;
-        } catch {}
-      }
-    }
-    restaurantId = restaurantId || 1; // fallback to 1 for dev
-
     // helper to include auth and tenant headers
     const buildHeaders = () => {
       const h = { 'Content-Type': 'application/json' };
@@ -33,7 +22,7 @@ export default function KDS() {
     };
 
     // 1. Fetch initial orders from the API
-    fetch('http://localhost:3000/api/pos/kds/orders', { 
+    apiFetch('/api/pos/kds/orders', {
       headers: buildHeaders()
     })
       .then(res => res.json())
@@ -60,13 +49,12 @@ export default function KDS() {
       .catch(err => console.error("Initial fetch failed:", err));
 
     // 2. Connect to Socket with restaurantId query
-    const newSocket = io('http://localhost:3000/kds', {
+    const newSocket = io(`${socketBaseUrl}/kds`, {
       auth: { token },
-      query: { restaurantId: String(restaurantId) }, // This fixes the "connected without restaurantId" log
       transports: ['websocket']
     });
 
-    newSocket.on('connect', () => console.log('Connected to KDS Room:', restaurantId));
+    newSocket.on('connect', () => console.log('Connected to KDS'));
     
     newSocket.on('new_order', data => {
       console.log('New order received via socket:', data);
@@ -95,7 +83,7 @@ export default function KDS() {
 
   // Mark item as ready
   const markReady = (itemId) => {
-    fetch(`http://localhost:3000/api/pos/kds/items/${itemId}/ready`, {
+    apiFetch(`/api/pos/kds/items/${itemId}/ready`, {
       method: 'POST',
       headers: buildHeaders()
     })
@@ -105,7 +93,7 @@ export default function KDS() {
       })
       .then(() => {
         // find the order containing this item and update its status when all items marked
-        fetch('http://localhost:3000/api/pos/kds/orders', {
+        apiFetch('/api/pos/kds/orders', {
           headers: buildHeaders()
         })
           .then(r => r.json())
@@ -255,7 +243,7 @@ export default function KDS() {
                 {order.status === 'ready' && (
                   <button
                     onClick={() => {
-                      fetch(`/api/pos/orders/${order.orderId}/status`, {
+                      apiFetch(`/api/pos/orders/${order.orderId}/status`, {
                         method: 'PUT',
                         headers: {
                           'Content-Type': 'application/json',

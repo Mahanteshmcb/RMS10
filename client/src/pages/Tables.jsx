@@ -1,3 +1,4 @@
+import { apiFetch, socketBaseUrl } from '../lib/api.js';
 import { useState, useEffect } from 'react';
 import { io as socketIo } from 'socket.io-client';
 
@@ -21,7 +22,7 @@ export default function Tables() {
   const fetchTables = () => {
     setLoading(true);
     setError(null);
-    fetch('/api/pos/tables', { headers: getHeaders() })
+    apiFetch('/api/pos/tables', { headers: getHeaders() })
       .then(r => {
         if (!r.ok) throw new Error('fetch failed: ' + r.status);
         return r.json();
@@ -39,7 +40,9 @@ export default function Tables() {
 
   useEffect(() => {
     fetchTables();
-    const socket = socketIo('http://localhost:3000');
+    const socket = socketIo(socketBaseUrl, {
+      auth: { token: localStorage.getItem('token') }
+    });
     socket.on('table_update', () => fetchTables());
     return () => socket.disconnect();
   }, []);
@@ -52,7 +55,7 @@ export default function Tables() {
     const payload = { name: newName, seats: parseInt(newSeats) || 1 };
     const method = editing ? 'PUT' : 'POST';
     const url = editing ? `/api/pos/tables/${editing.id}` : '/api/pos/tables';
-    fetch(url, { method, headers: getHeaders(), body: JSON.stringify(payload) })
+    apiFetch(url, { method, headers: getHeaders(), body: JSON.stringify(payload) })
       .then(r => {
         if (!r.ok) throw new Error('submit failed');
         return r.json();
@@ -86,7 +89,7 @@ export default function Tables() {
 
   const del = id => {
     if (window.confirm('Delete this table? This action cannot be undone.')) {
-      fetch(`/api/pos/tables/${id}`, { method: 'DELETE', headers: getHeaders() })
+      apiFetch(`/api/pos/tables/${id}`, { method: 'DELETE', headers: getHeaders() })
         .then(r => {
           if (!r.ok) throw new Error('delete failed');
           fetchTables();
@@ -101,7 +104,7 @@ export default function Tables() {
     if (t.status === 'vacant') next = 'occupied';
     else if (t.status === 'occupied') next = 'vacant';
     else next = 'vacant';
-    fetch(`/api/pos/tables/${t.id}`, {
+    apiFetch(`/api/pos/tables/${t.id}`, {
       method: 'PUT',
       headers: getHeaders(),
       body: JSON.stringify({ name: t.name, status: next, seats: t.seats }),
@@ -115,7 +118,7 @@ export default function Tables() {
 
   const toggleReserve = t => {
     const next = t.status === 'reserved' ? 'vacant' : 'reserved';
-    fetch(`/api/pos/tables/${t.id}`, {
+    apiFetch(`/api/pos/tables/${t.id}`, {
       method: 'PUT',
       headers: getHeaders(),
       body: JSON.stringify({ name: t.name, status: next, seats: t.seats }),

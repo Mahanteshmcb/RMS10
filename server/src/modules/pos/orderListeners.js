@@ -48,9 +48,9 @@ eventBus.on('ORDER_CREATED', async ({ restaurantId, orderId, tableId, customerNa
           timestamp
         });
         
-        // broadcast table update globally for real-time UI updates
+        // Broadcast table updates only to sockets for this restaurant.
         const { io } = require('../../app');
-        io.emit('table_update', { restaurantId, tableId, status: 'occupied' });
+        io.to(`restaurant_${restaurantId}`).emit('table_update', { restaurantId, tableId, status: 'occupied' });
       }
     } else {
       // For delivery/takeout orders without table, just notify kitchen
@@ -96,7 +96,7 @@ eventBus.on('ORDER_COMPLETED', async ({ restaurantId, orderId }) => {
       const tableId = result.rows[0].id;
       console.log(`Table ${tableId} marked billed for order ${orderId}`);
       const { io } = require('../../app');
-      io.emit('table_update', { restaurantId, tableId, status: 'billed' });
+      io.to(`restaurant_${restaurantId}`).emit('table_update', { restaurantId, tableId, status: 'billed' });
     }
   } catch (err) {
     console.error('Error in ORDER_COMPLETED listener:', err);
@@ -119,7 +119,7 @@ eventBus.on('ORDER_PAID', async ({ restaurantId, orderId }) => {
       const tableId = result.rows[0].id;
       console.log(`Table freed after payment for order ${orderId}`);
       const { io } = require('../../app');
-      io.emit('table_update', { restaurantId, tableId, status: 'vacant' });
+      io.to(`restaurant_${restaurantId}`).emit('table_update', { restaurantId, tableId, status: 'vacant' });
     }
   } catch (err) {
     console.error('Error in ORDER_PAID listener:', err);

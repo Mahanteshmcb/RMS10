@@ -1,3 +1,4 @@
+import { apiFetch } from '../../lib/api.js';
 import { useEffect, useState } from 'react';
 import { useAuth, hasPermission } from '../../hooks/useAuth';
 
@@ -16,11 +17,11 @@ export default function Stock() {
 
   useEffect(() => {
     if (!token) return;
-    fetch('/api/inventory/stock', { headers: authHeaders() }).then(r => r.ok ? r.json() : Promise.reject(new Error(`${r.status}`))).then(setStock).catch(e => console.error('Error fetching stock:', e));
+    apiFetch('/api/inventory/stock', { headers: authHeaders() }).then(r => r.ok ? r.json() : Promise.reject(new Error(`${r.status}`))).then(setStock).catch(e => console.error('Error fetching stock:', e));
   }, [token]);
 
   const updateThreshold = (id, threshold) => {
-    fetch('/api/inventory/stock', {
+    apiFetch('/api/inventory/stock', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
       body: JSON.stringify({ id, threshold }),
@@ -30,7 +31,7 @@ export default function Stock() {
   };
 
   const updateQuantity = (id, qty) => {
-    fetch('/api/inventory/stock', {
+    apiFetch('/api/inventory/stock', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
       body: JSON.stringify({ id, quantity: qty }),

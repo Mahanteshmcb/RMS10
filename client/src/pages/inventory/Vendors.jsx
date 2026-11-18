@@ -1,3 +1,4 @@
+import { apiFetch } from '../../lib/api.js';
 import { useEffect, useState } from 'react';
 import { useAuth, hasPermission } from '../../hooks/useAuth';
 
@@ -21,12 +22,12 @@ export default function Vendors() {
 
   useEffect(() => {
     if (!token) return;
-    fetch('/api/inventory/vendors', { headers: authHeaders() }).then(r => r.ok ? r.json() : Promise.reject(new Error(`${r.status}`))).then(setVendors).catch(e => console.error('Error fetching vendors:', e));
+    apiFetch('/api/inventory/vendors', { headers: authHeaders() }).then(r => r.ok ? r.json() : Promise.reject(new Error(`${r.status}`))).then(setVendors).catch(e => console.error('Error fetching vendors:', e));
   }, [token]);
 
   function add() {
     if (!name.trim()) return alert('Name required');
-    fetch('/api/inventory/vendors', {
+    apiFetch('/api/inventory/vendors', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
       body: JSON.stringify({ name, contact_info: contact }),
@@ -39,13 +40,13 @@ export default function Vendors() {
   }
 
   function remove(id) {
-    fetch(`/api/inventory/vendors/${id}`, { method: 'DELETE', headers: authHeaders() }).then(() =>
+    apiFetch(`/api/inventory/vendors/${id}`, { method: 'DELETE', headers: authHeaders() }).then(() =>
       setVendors(prev => prev.filter(v => v.id !== id))
     ).catch(e => console.error('Error deleting vendor:', e));
   }
 
   function update(id, newName, newContact) {
-    fetch(`/api/inventory/vendors/${id}`, {
+    apiFetch(`/api/inventory/vendors/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
       body: JSON.stringify({ name: newName, contact_info: newContact }),

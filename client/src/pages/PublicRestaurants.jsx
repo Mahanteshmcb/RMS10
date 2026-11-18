@@ -1,3 +1,4 @@
+import { apiFetch } from '../lib/api.js';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -7,7 +8,7 @@ export default function PublicRestaurants() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetch('/api/public/restaurants')
+    apiFetch('/api/public/restaurants')
       .then(async (r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         const ct = r.headers.get('content-type') || '';

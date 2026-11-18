@@ -1,3 +1,4 @@
+import { apiFetch } from '../lib/api.js';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 
@@ -23,8 +24,8 @@ export default function Menu() {
     setLoading(true);
     setError(null);
     Promise.all([
-      fetch('/api/pos/categories', { headers: getHeaders() }).then(r => r.json()),
-      fetch('/api/pos/menu-items', { headers: getHeaders() }).then(r => r.json())
+      apiFetch('/api/pos/categories', { headers: getHeaders() }).then(r => r.json()),
+      apiFetch('/api/pos/menu-items', { headers: getHeaders() }).then(r => r.json())
     ])
       .then(([cats, items]) => {
         setCategories(cats || []);
@@ -74,7 +75,7 @@ export default function Menu() {
       category_id: form.category_id || null
     };
     if (editing) {
-      fetch(`/api/pos/menu-items/${editing}`, { method: 'PUT', headers: getHeaders(true), body: JSON.stringify(payload) })
+      apiFetch(`/api/pos/menu-items/${editing}`, { method: 'PUT', headers: getHeaders(true), body: JSON.stringify(payload) })
         .then(r => r.ok ? r.json() : Promise.reject(new Error(r.status)))
         .then(updated => {
           setItems(prev => prev.map(i => (i.id === updated.id ? updated : i)));
@@ -82,7 +83,7 @@ export default function Menu() {
         })
         .catch(e => alert('Update failed: ' + e.message));
     } else {
-      fetch('/api/pos/menu-items', { method: 'POST', headers: getHeaders(true), body: JSON.stringify(payload) })
+      apiFetch('/api/pos/menu-items', { method: 'POST', headers: getHeaders(true), body: JSON.stringify(payload) })
         .then(r => r.ok ? r.json() : Promise.reject(new Error(r.status)))
         .then(created => {
           setItems(prev => [...prev, created]);
@@ -94,7 +95,7 @@ export default function Menu() {
 
   function removeItem(id) {
     if (!confirm('Delete this item?')) return;
-    fetch(`/api/pos/menu-items/${id}`, { method: 'DELETE', headers: getHeaders(false) })
+    apiFetch(`/api/pos/menu-items/${id}`, { method: 'DELETE', headers: getHeaders(false) })
       .then(r => { if (!r.ok) throw new Error(r.status); setItems(prev => prev.filter(i => i.id !== id)); })
       .catch(e => alert('Delete failed: ' + e.message));
   }

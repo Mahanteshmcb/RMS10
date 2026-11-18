@@ -4,8 +4,31 @@
 require('dotenv').config();
 
 const express = require('express');
+const cors = require('cors');
 const app = express();
 
+const frontendOrigins = (process.env.FRONTEND_URL || '')
+  .split(',')
+  .map(origin => origin.trim())
+  .filter(Boolean);
+
+if (process.env.NODE_ENV === 'production' && !process.env.DATABASE_URL) {
+  throw new Error('DATABASE_URL must be set in production');
+}
+
+if (process.env.NODE_ENV === 'production' && frontendOrigins.length === 0) {
+  throw new Error('FRONTEND_URL must contain the deployed frontend origin in production');
+}
+
+if (process.env.NODE_ENV !== 'production') {
+  frontendOrigins.push('http://localhost:5173', 'http://localhost:5174');
+}
+
+app.use(cors({
+  origin: frontendOrigins,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-restaurant-id'],
+}));
 app.use(express.json());
 
 // ensure some optional columns exist (runtime migration)
@@ -19,15 +42,23 @@ const db = require('./config/db');
   }
 })();
 
-const { authMiddleware } = require('./core/auth/jwt');
+const { authMiddleware, verify } = require('./core/auth/jwt');
+const { requireSuperAdmin } = require('./core/auth/authorize');
 const { checkModule } = require('./core/middleware/featureFlagCheck');
 const tenantHandler = require('./core/middleware/tenantHandler');
 
 // NOTE: POS listeners are imported after socket namespaces are initialized (see below)
 // require('./modules/pos/orderListeners');
 
-// sample health check route
-app.get('/health', (req, res) => res.json({ status: 'ok' }));
+app.get('/health', async (req, res) => {
+  try {
+    await db.query('SELECT 1');
+    res.json({ status: 'ok' });
+  } catch (error) {
+    console.error('Health check database query failed:', error.message);
+    res.status(503).json({ status: 'unavailable' });
+  }
+});
 
 // public endpoints (no auth) for browsing restaurants & menu
 const publicRouter = require('./routes/publicRoutes');
@@ -41,9 +72,9 @@ app.use('/api/public', publicOrderRouter);
 const onboardingRouter = require('./routes/onboardingRoutes');
 app.use('/api/onboarding', onboardingRouter);
 
-// SuperAdmin routes (no tenant or auth for now - should be secured separately)
+// Platform administration is restricted to authenticated superadmins.
 const superAdminRouter = require('./routes/superAdmin');
-app.use('/api/admin', superAdminRouter);
+app.use('/api/admin', authMiddleware, requireSuperAdmin, superAdminRouter);
 
 // authentication routes
 const authRouter = require('./routes/auth');
@@ -56,52 +87,68 @@ const http = require('http');
 const { Server: SocketIo } = require('socket.io');
 const server = http.createServer(app);
 const io = new SocketIo(server, {
-  cors: { origin: '*' }
+  cors: { origin: frontendOrigins }
 });
+
+function authenticateSocket(socket, next) {
+  const token = socket.handshake.auth && socket.handshake.auth.token;
+  const user = token && verify(token);
+  const restaurantId = Number(user && user.restaurantId);
+  const requestedRestaurantId = socket.handshake.query.restaurantId;
+
+  if (!user || !Number.isInteger(restaurantId) || restaurantId <= 0) {
+    return next(new Error('Unauthorized'));
+  }
+  if (requestedRestaurantId && Number(requestedRestaurantId) !== restaurantId) {
+    return next(new Error('Forbidden'));
+  }
+
+  socket.data.user = user;
+  socket.data.restaurantId = restaurantId;
+  next();
+}
+
+function joinRestaurantRoom(socket) {
+  socket.join(`restaurant_${socket.data.restaurantId}`);
+}
+
+io.use(authenticateSocket);
 
 // prepare placeholders for namespaces so they can be imported
 let kds, waiter;
 
 // simple connection log (global namespace)
 io.on('connection', socket => {
+  joinRestaurantRoom(socket);
   console.log('client connected', socket.id);
   socket.on('disconnect', () => console.log('client disconnected', socket.id));
 });
 
 // kitchen namespace
 kds = io.of('/kds');
+kds.use(authenticateSocket);
 kds.on('connection', socket => {
-  // 1. Get restaurantId from the connection query
-  const { restaurantId } = socket.handshake.query;
-  
-  if (restaurantId) {
-    // 2. Join a room specific to this restaurant
-    socket.join(`restaurant_${restaurantId}`);
-    console.log(`KDS client connected for restaurant ${restaurantId}`, socket.id);
-  } else {
-    console.log('KDS client connected without restaurantId', socket.id);
-  }
+  joinRestaurantRoom(socket);
+  console.log(`KDS client connected for restaurant ${socket.data.restaurantId}`, socket.id);
 
   socket.on('disconnect', () => console.log('KDS client disconnected', socket.id));
 });
 
 // waiter namespace
 waiter = io.of('/waiter');
+waiter.use(authenticateSocket);
 waiter.on('connection', socket => {
-  const { restaurantId } = socket.handshake.query;
-  if (restaurantId) {
-    socket.join(`restaurant_${restaurantId}`);
-    console.log(`Waiter client connected for restaurant ${restaurantId}`, socket.id);
-  } else {
-    console.log('Waiter client connected without restaurantId', socket.id);
-  }
+  joinRestaurantRoom(socket);
+  console.log(`Waiter client connected for restaurant ${socket.data.restaurantId}`, socket.id);
   socket.on('disconnect', () => console.log('Waiter client disconnected', socket.id));
 });
 
 // inventory namespace for stock alerts
 let inventory;
 inventory = io.of('/inventory');
+inventory.use(authenticateSocket);
 inventory.on('connection', socket => {
+  joinRestaurantRoom(socket);
   console.log('Inventory client connected', socket.id);
   socket.on('disconnect', () => console.log('Inventory client disconnected', socket.id));
 });
@@ -115,7 +162,7 @@ require('./modules/pos/orderListeners');
 require('./modules/inventory/inventoryListeners');
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
 });
 

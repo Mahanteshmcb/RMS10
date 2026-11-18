@@ -1,3 +1,4 @@
+import { apiFetch } from '../lib/api.js';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
@@ -30,7 +31,7 @@ export default function RestaurantMenuPublic() {
 
   const fetchRestaurantMenu = async () => {
     try {
-      const response = await fetch(`/api/public/restaurants/${slug}`);
+      const response = await apiFetch(`/api/public/restaurants/${slug}`);
       if (!response.ok) {
         const text = await response.text();
         throw new Error(text || 'Restaurant not found');
@@ -91,7 +92,7 @@ export default function RestaurantMenuPublic() {
 
     setProcessing(true);
     try {
-      const response = await fetch(`/api/public/orders`, {
+      const response = await apiFetch(`/api/public/orders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

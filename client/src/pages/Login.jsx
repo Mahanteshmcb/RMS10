@@ -1,10 +1,11 @@
+import { apiFetch } from '../lib/api.js';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
 export default function Login() {
-  const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('admin123');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -16,7 +17,7 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await apiFetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
@@ -119,24 +120,6 @@ export default function Login() {
             {loading ? '🔄 Logging in...' : '🔓 Login'}
           </button>
         </form>
-
-        {/* Divider */}
-        <div className="my-6 flex items-center">
-          <div className="flex-1 border-t border-gray-300"></div>
-          <span className="px-3 text-gray-500 text-sm">or</span>
-          <div className="flex-1 border-t border-gray-300"></div>
-        </div>
-
-        {/* Footer */}
-        <div className="text-center">
-          <p className="text-gray-600 text-sm mb-2">Demo Credentials:</p>
-          <div className="bg-gray-50 p-3 rounded text-xs space-y-1 text-left">
-            <p><strong>Owner:</strong> admin / admin123</p>
-            <p><strong>Manager:</strong> manager / manager123</p>
-            <p><strong>Waiter:</strong> waiter / waiter123</p>
-            <p><strong>Chef:</strong> chef / chef123</p>
-          </div>
-        </div>
 
         {/* Guest Link */}
         <div className="mt-6 py-4 border-t border-gray-200 text-center">

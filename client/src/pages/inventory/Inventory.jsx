@@ -1,3 +1,4 @@
+import { apiFetch } from '../../lib/api.js';
 import React, { useState, useEffect } from 'react';
 import { NavLink, Routes, Route } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
@@ -23,7 +24,7 @@ export default function Inventory() {
   // quick check to surface permission errors or missing module
   useEffect(() => {
     if (!token || loading) return;
-    fetch('/api/inventory/units', { headers: authHeaders() })
+    apiFetch('/api/inventory/units', { headers: authHeaders() })
       .then(r => {
         if (!r.ok) throw new Error(`Inventory API ${r.status}`);
         return r.json();

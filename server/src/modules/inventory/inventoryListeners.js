@@ -30,7 +30,7 @@ eventBus.on('ORDER_COMPLETED', async ({ restaurantId, orderId }) => {
               const payload = { restaurantId, raw_material_id: rec.raw_material_id, quantity };
               eventBus.emit('LOW_STOCK', payload);
               if (inventory) {
-                inventory.emit('low_stock', payload);
+                inventory.to(`restaurant_${restaurantId}`).emit('low_stock', payload);
               }
             }
           }

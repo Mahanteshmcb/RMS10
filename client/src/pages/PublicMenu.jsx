@@ -1,3 +1,4 @@
+import { apiFetch } from '../lib/api.js';
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import QRCode from 'react-qr-code';
@@ -12,7 +13,7 @@ export default function PublicMenu() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetch(`/api/public/restaurants/${slug}`)
+    apiFetch(`/api/public/restaurants/${slug}`)
       .then(r => r.json())
       .then(setData)
       .catch(err => setError(err.message))

@@ -2,6 +2,10 @@ const jwt = require('jsonwebtoken');
 
 const SECRET = process.env.JWT_SECRET || 'super-secret-key';
 
+if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET must be set in production');
+}
+
 function sign(payload, options = {}) {
   return jwt.sign(payload, SECRET, { expiresIn: '8h', ...options });
 }

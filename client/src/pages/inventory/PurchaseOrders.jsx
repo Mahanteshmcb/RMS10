@@ -1,3 +1,4 @@
+import { apiFetch } from '../../lib/api.js';
 import { useEffect, useState, useContext } from 'react';
 import AuthContext from '../../context/AuthContext';
 
@@ -10,13 +11,13 @@ function AddItemForm({ orderId, refresh, authHeaders }) {
 
   useEffect(() => {
     if (!token) return;
-    fetch('/api/inventory/materials', { headers: authHeaders() }).then(r => r.ok ? r.json() : Promise.reject(new Error(`${r.status}`))).then(setMaterials).catch(e => console.error('Error fetching materials:', e));
+    apiFetch('/api/inventory/materials', { headers: authHeaders() }).then(r => r.ok ? r.json() : Promise.reject(new Error(`${r.status}`))).then(setMaterials).catch(e => console.error('Error fetching materials:', e));
   }, [token]);
 
   const submit = () => {
     if (!matId) return alert('select material');
     if (qty <= 0) return alert('quantity must be positive');
-    fetch(`/api/inventory/purchase-orders/${orderId}/items`, {
+    apiFetch(`/api/inventory/purchase-orders/${orderId}/items`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
       body: JSON.stringify({ raw_material_id: matId, quantity: qty, unit_price: price }),
@@ -68,13 +69,13 @@ export default function PurchaseOrders() {
 
   useEffect(() => {
     if (!token) return;
-    fetch('/api/inventory/purchase-orders', { headers: authHeaders() }).then(r => r.ok ? r.json() : Promise.reject(new Error(`${r.status}`))).then(setOrders).catch(e => console.error('Error fetching orders:', e));
-    fetch('/api/inventory/vendors', { headers: authHeaders() }).then(r => r.ok ? r.json() : Promise.reject(new Error(`${r.status}`))).then(setVendors).catch(e => console.error('Error fetching vendors:', e));
+    apiFetch('/api/inventory/purchase-orders', { headers: authHeaders() }).then(r => r.ok ? r.json() : Promise.reject(new Error(`${r.status}`))).then(setOrders).catch(e => console.error('Error fetching orders:', e));
+    apiFetch('/api/inventory/vendors', { headers: authHeaders() }).then(r => r.ok ? r.json() : Promise.reject(new Error(`${r.status}`))).then(setVendors).catch(e => console.error('Error fetching vendors:', e));
   }, [token]);
 
   function create() {
     if (!vendorId) return alert('select vendor');
-    fetch('/api/inventory/purchase-orders', {
+    apiFetch('/api/inventory/purchase-orders', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
       body: JSON.stringify({ vendor_id: vendorId, status }),
@@ -87,14 +88,14 @@ export default function PurchaseOrders() {
   }
 
   const loadItems = orderId => {
-    fetch(`/api/inventory/purchase-orders/${orderId}/items`, { headers: authHeaders() })
+    apiFetch(`/api/inventory/purchase-orders/${orderId}/items`, { headers: authHeaders() })
       .then(r => r.ok ? r.json() : Promise.reject(new Error(`${r.status}`)))
       .then(rows => setItemsMap(prev => ({ ...prev, [orderId]: rows })))
       .catch(e => console.error('Error loading items:', e));
   };
 
   const updateOrder = (id, vendor, stat) => {
-    fetch(`/api/inventory/purchase-orders/${id}`, {
+    apiFetch(`/api/inventory/purchase-orders/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ vendor_id: vendor, status: stat }),
@@ -190,7 +191,7 @@ export default function PurchaseOrders() {
                     </button>
                     <button
                       onClick={() => {
-                        fetch(`/api/inventory/purchase-orders/${o.id}`, { method: 'DELETE', headers: authHeaders() })
+                        apiFetch(`/api/inventory/purchase-orders/${o.id}`, { method: 'DELETE', headers: authHeaders() })
                           .then(() => setOrders(prev => prev.filter(p => p.id !== o.id)))
                           .catch(e => console.error('Error deleting order:', e));
                       }}
@@ -226,7 +227,7 @@ export default function PurchaseOrders() {
                   <td className="px-2 py-1">
                     <button
                       onClick={() => {
-                        fetch(`/api/inventory/purchase-orders/${orderId}/items/${i.id}`, { method: 'DELETE', headers: authHeaders() })
+                        apiFetch(`/api/inventory/purchase-orders/${orderId}/items/${i.id}`, { method: 'DELETE', headers: authHeaders() })
                           .then(() => loadItems(orderId))
                           .catch(e => console.error('Error deleting item:', e));
                       }}

@@ -108,7 +108,7 @@ async function updateStatus(req, res, next) {
     // broadcast to all socket clients
     try {
       const { io } = require('../../../app');
-      io.emit('order_status_updated', {
+      io.to(`restaurant_${req.restaurantId}`).emit('order_status_updated', {
         orderId: id,
         restaurantId: req.restaurantId,
         status: status,
@@ -133,7 +133,7 @@ async function pay(req, res, next) {
 
     try {
       const { io } = require('../../../app');
-      io.emit('order_status_updated', {
+      io.to(`restaurant_${req.restaurantId}`).emit('order_status_updated', {
         orderId: id,
         restaurantId: req.restaurantId,
         status: 'paid',

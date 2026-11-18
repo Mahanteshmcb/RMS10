@@ -1,3 +1,4 @@
+import { apiFetch, socketBaseUrl } from '../lib/api.js';
 import { useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 import { useNavigate } from 'react-router-dom';
@@ -23,21 +24,8 @@ export default function Waiter() {
   // Connect to waiter namespace and initialize
   useEffect(() => {
     const token = localStorage.getItem('token');
-    // ensure restaurantId is included in socket query
-    let restaurantId = localStorage.getItem('restaurantId');
-    if (!restaurantId) {
-      const storedUser = localStorage.getItem('user');
-      if (storedUser) {
-        try {
-          restaurantId = JSON.parse(storedUser).restaurantId;
-        } catch {}
-      }
-    }
-    restaurantId = restaurantId || 1;
-
-    const newSocket = io('http://localhost:3000/waiter', {
+    const newSocket = io(`${socketBaseUrl}/waiter`, {
       auth: { token },
-      query: { restaurantId: String(restaurantId) },
       reconnection: true
     });
 
@@ -80,7 +68,7 @@ export default function Waiter() {
   // Fetch order list filtered by current states
   const fetchOrders = () => {
     const token = localStorage.getItem('token');
-    fetch('/api/pos/orders?status=ready_for_service', {
+    apiFetch('/api/pos/orders?status=ready_for_service', {
       headers: getHeaders()
     })
       .then(r => r.json())
@@ -89,7 +77,7 @@ export default function Waiter() {
         for (const o of rows) {
           let items = [];
           try {
-            const r2 = await fetch(`/api/pos/orders/${o.id}`, {
+            const r2 = await apiFetch(`/api/pos/orders/${o.id}`, {
               headers: getHeaders()
             });
             if (r2.ok) {
@@ -113,7 +101,7 @@ export default function Waiter() {
 
   // Mark order as served
   const markServed = (orderId) => {
-    fetch(`/api/pos/orders/${orderId}/status`, {
+    apiFetch(`/api/pos/orders/${orderId}/status`, {
       method: 'PUT',
       headers: getHeaders(),
       body: JSON.stringify({ status: 'served', notes: 'Served by waiter' })
@@ -261,7 +249,7 @@ export default function Waiter() {
               {order.status === 'served' && (
                 <button
                   onClick={() => {
-                    fetch(`/api/pos/orders/${order.orderId}/status`, {
+                    apiFetch(`/api/pos/orders/${order.orderId}/status`, {
                       method: 'PUT',
                       headers: {
                         'Content-Type': 'application/json',

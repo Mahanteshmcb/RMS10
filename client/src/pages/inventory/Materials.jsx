@@ -1,3 +1,4 @@
+import { apiFetch } from '../../lib/api.js';
 import { useEffect, useState } from 'react';
 import { useAuth, hasPermission } from '../../hooks/useAuth';
 
@@ -22,13 +23,13 @@ export default function Materials() {
 
   useEffect(() => {
     if (!token) return;
-    fetch('/api/inventory/materials', { headers: authHeaders() }).then(r => r.ok ? r.json() : Promise.reject(new Error(`${r.status}`))).then(setMaterials).catch(e => console.error('Error fetching materials:', e));
-    fetch('/api/inventory/units', { headers: authHeaders() }).then(r => r.ok ? r.json() : Promise.reject(new Error(`${r.status}`))).then(setUnits).catch(e => console.error('Error fetching units:', e));
+    apiFetch('/api/inventory/materials', { headers: authHeaders() }).then(r => r.ok ? r.json() : Promise.reject(new Error(`${r.status}`))).then(setMaterials).catch(e => console.error('Error fetching materials:', e));
+    apiFetch('/api/inventory/units', { headers: authHeaders() }).then(r => r.ok ? r.json() : Promise.reject(new Error(`${r.status}`))).then(setUnits).catch(e => console.error('Error fetching units:', e));
   }, [token]);
 
   function add() {
     if (!name.trim()) return alert('Name required');
-    fetch('/api/inventory/materials', {
+    apiFetch('/api/inventory/materials', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
       body: JSON.stringify({ name, unit_id: unitId }),
@@ -41,13 +42,13 @@ export default function Materials() {
   }
 
   function remove(id) {
-    fetch(`/api/inventory/materials/${id}`, { method: 'DELETE', headers: authHeaders() }).then(() =>
+    apiFetch(`/api/inventory/materials/${id}`, { method: 'DELETE', headers: authHeaders() }).then(() =>
       setMaterials(prev => prev.filter(m => m.id !== id))
     ).catch(e => console.error('Error deleting material:', e));
   }
 
   function update(id, newName, newUnit) {
-    fetch(`/api/inventory/materials/${id}`, {
+    apiFetch(`/api/inventory/materials/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
       body: JSON.stringify({ name: newName, unit_id: newUnit }),

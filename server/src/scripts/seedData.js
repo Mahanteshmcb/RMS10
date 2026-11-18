@@ -30,6 +30,12 @@ async function ensureDbMigrations() {
 
 async function main() {
   try {
+    const databaseHost = new URL(
+      process.env.DATABASE_URL || 'postgres://user:password@localhost:5434/rms'
+    ).hostname;
+    if (process.env.NODE_ENV === 'production' || !['localhost', '127.0.0.1', '::1'].includes(databaseHost)) {
+      throw new Error('Refusing to run destructive seedData.js against a production or remote database');
+    }
     console.log('🌱 Starting database seed...\n');
 
     // Ensure schema is up-to-date
