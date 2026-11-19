@@ -1,8 +1,18 @@
 // database connection helper using pg
+const fs = require('fs');
+const path = require('path');
 const { Pool } = require('pg');
+
+const ssl = process.env.NODE_ENV === 'production'
+  ? {
+      ca: fs.readFileSync(path.join(__dirname, '../../certs/supabase-ca-2021.crt'), 'utf8'),
+      rejectUnauthorized: true,
+    }
+  : undefined;
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL || 'postgres://user:password@localhost:5434/rms',
+  ...(ssl ? { ssl } : {}),
 });
 
 /**
